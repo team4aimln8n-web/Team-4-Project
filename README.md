@@ -1,6 +1,6 @@
 # 📑 Table of Contents
 
-1. [Executive Summary](#Executive Summary )
+1. [Executive Summary](#Executive-Summary )
 2. [System Architecture](#system-architecture)
 3. [Sequence Diagrams](#sequence-diagrams)
 4. [Environment Variables](#environment-variables)
