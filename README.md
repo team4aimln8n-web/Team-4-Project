@@ -4,11 +4,11 @@
 2. [System Overview & Architecture](#System-Overview-And-Architecture)
 3. [User Roles & Journeys](#User-Roles-And-Journeys)
 4. [Frontend Documentation](#Frontend-Documentation)
-5. [Backend Architecture (n8n)](#Backend-Architecture-(n8n))
+5. [Backend Architecture (n8n)](#Backend-Architecture-With-n8n)
 6. [Database Design](#Database-Design)
-7. [AI Chatbot Architecture & Safety](#AI-Chatbot-Architecture-&-Safety)
-8. [Deployment & Hosting](#Deployment-&-Hosting)
-9. [Customization & Scalability](#Customization-&-Scalability)
+7. [AI Chatbot Architecture & Safety](#AI-Chatbot-Architecture-And-Safety)
+8. [Deployment & Hosting](#Deployment-And-Hosting)
+9. [Customization & Scalability](#Customization-And-Scalability)
 10. [Known Limitations](#Known-Limitations)
 11. [Future Enhancements](#Future-Enhancements)
 12. [Glossary for Non-Technical Readers](#Glossary-for-Non-Technical-Readers)
@@ -2367,7 +2367,7 @@ While the framework-free approach has trade-offs (more verbose code, manual stat
 
 ---
 
-# Backend Architecture (n8n)
+# Backend Architecture With n8n
 
 ## Overview
 
@@ -4330,7 +4330,7 @@ By leveraging Supabase's managed PostgreSQL service, the application gains enter
 
 ---
 
-# AI Chatbot Architecture & Safety
+# AI Chatbot Architecture And Safety
 
 ## Overview
 
@@ -5132,7 +5132,7 @@ The chatbot demonstrates how modern AI can be safely and effectively integrated 
 
 ---
 
-# Deployment & Hosting
+# Deployment And Hosting
 
 ## Overview
 
@@ -6167,7 +6167,7 @@ The deployment process is straightforward enough for solo developers yet robust 
 For most e-commerce stores, this architecture will never need migration—the hosting services scale well beyond typical requirements. If the business does outgrow n8n or Supabase, the migration path is clear and can be executed gradually without downtime.
 
 ---
-# Customization & Scalability
+# Customization And Scalability
 
 ## Overview
 
@@ -7879,7 +7879,7 @@ ShopHub provides a **solid foundation** that grows with your business. The archi
 The beauty of this architecture is that **you're never locked in**. Each enhancement is an independent module that can be added, modified, or replaced without disrupting the core system. Start where you are, add what you need, grow when you're ready.
 
 ---
-# Glossary for Non-Technical Readers
+# Glossary for Non Technical Readers
 
 ## Overview
 
