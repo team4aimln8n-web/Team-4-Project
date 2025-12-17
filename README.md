@@ -3472,3 +3472,842 @@ While not suitable for all use cases, n8n excels in the "sweet spot" of small to
 For ShopHub, n8n serves as the entire backend infrastructure—handling product catalog, cart management, order processing, admin operations, and customer communications—without a single line of traditional backend code. This architectural choice enables rapid iteration, easy debugging, and a lower barrier to entry for developers and business stakeholders alike.
 
 ---
+
+# Database Design
+
+## Overview
+
+ShopHub uses Supabase as its complete database and authentication solution. Supabase provides a fully-managed PostgreSQL database with built-in authentication, real-time capabilities, and a RESTful API. In this architecture, Supabase serves two critical functions:
+
+1. **Database Layer**: Stores all application data (products, orders, carts, feedback)
+2. **Authentication Layer**: Manages user registration, login, and session management
+
+The database design follows standard relational database principles with normalized tables, foreign key relationships, and data integrity constraints. All tables use UUIDs as primary keys for security and scalability.
+
+---
+
+## Why Supabase?
+
+**All-in-One Solution**:
+- PostgreSQL database (industry-standard, reliable)
+- Built-in authentication system (no custom auth code needed)
+- Automatic API generation (though not used directly by frontend)
+- Real-time subscriptions (available for future features)
+- Row Level Security (RLS) for fine-grained access control
+
+**Developer Experience**:
+- Visual database editor for table management
+- Automatic schema migrations
+- SQL editor for complex queries
+- Built-in monitoring and logging
+- Generous free tier, pay-as-you-grow pricing
+
+**Security**:
+- Encrypted connections (TLS/SSL)
+- Automatic backups
+- Role-based access control
+- Service Role Key for backend operations
+- User authentication with JWT tokens
+
+**Scalability**:
+- PostgreSQL scales to millions of rows
+- Automatic connection pooling
+- Read replicas available (paid tiers)
+- Global CDN for authentication endpoints
+
+---
+
+## Database Architecture Pattern
+
+### Three-Layer Access Model
+
+**Layer 1 - Frontend (No Direct Access)**:
+- Frontend never queries Supabase directly
+- No database credentials in browser
+- No SQL queries in JavaScript
+- All data requests go through n8n webhooks
+
+**Layer 2 - n8n Backend (Full Access)**:
+- n8n uses Supabase Service Role Key
+- Service Role Key bypasses Row Level Security (RLS)
+- All business logic and validation in n8n workflows
+- Centralized data access control
+
+**Layer 3 - Supabase Database**:
+- PostgreSQL stores all data
+- Enforces referential integrity (foreign keys)
+- Provides ACID transaction guarantees
+- Handles data persistence and backups
+
+**Why This Pattern?**:
+- **Security**: Database credentials never exposed to users
+- **Business Logic**: All validation centralized in n8n
+- **Flexibility**: Change database queries without frontend updates
+- **Audit Trail**: All operations logged in n8n execution history
+- **Simplified Frontend**: Frontend focuses on UI, not data access
+
+---
+
+## Table Structure Overview
+
+### Core E-commerce Tables
+```
+products → product_images (1-to-many)
+  ↓
+cart_items (references products)
+  ↓
+cart (aggregates cart_items per user)
+  
+orders → order_items (1-to-many)
+  ↓
+order_items → products (captures product snapshot)
+```
+
+### Feedback Tables
+```
+user_feedback (structured feedback from forms)
+chatbot_feedback (conversational feedback from AI chat)
+```
+
+### Authentication Table (Managed by Supabase)
+```
+auth.users (managed by Supabase Auth)
+  ↓
+Referenced by: cart, orders, user_feedback, chatbot_feedback
+```
+
+---
+
+## Table Schemas
+
+### 1. products
+
+**Purpose**: Central catalog of all products available in the store.
+
+**Columns**:
+- `id` (UUID): Unique identifier for each product, primary key
+- `name` (Text): Product name displayed to customers (e.g., "Blue Cotton T-Shirt")
+- `description` (Text): Detailed product description, can be long-form text
+- `price` (Numeric/Decimal): Product price in dollars (e.g., 29.99)
+- `category` (Text): Product classification for filtering (e.g., "Clothing", "Electronics")
+- `stock_quantity` (Integer): Current inventory count, decremented on purchase
+- `created_at` (Timestamp): When product was added to catalog
+- `updated_at` (Timestamp): Last modification timestamp
+- `is_active` (Boolean): Soft delete flag (false = hidden from storefront)
+
+**Key Features**:
+- **Stock Management**: Quantity decremented atomically during checkout to prevent overselling
+- **Price History**: Immutable—price changes don't affect past orders (captured in order_items)
+- **Soft Deletes**: Products marked inactive rather than deleted (preserves order history)
+- **Full-Text Search**: Description field supports search functionality (future enhancement)
+
+**Usage**:
+- Homepage: Display featured products (first 8-10 items)
+- Products Page: Show all active products with filtering by category
+- Product Details: Show complete information for single product
+- Cart Validation: Verify product still exists and is in stock
+- Order Processing: Check stock before finalizing orders
+
+**Relationships**:
+- One product → Many product_images
+- One product → Many cart_items
+- One product → Many order_items
+
+---
+
+### 2. product_images
+
+**Purpose**: Store multiple image URLs for each product (supports product galleries).
+
+**Columns**:
+- `id` (UUID): Unique identifier for each image, primary key
+- `product_id` (UUID): Foreign key linking to products table
+- `image_url` (Text): Full URL to hosted image (Imgur, Cloudinary, Supabase Storage, etc.)
+- `is_primary` (Boolean): Marks the main product image displayed in product cards
+- `display_order` (Integer): Determines sequence in product gallery (1, 2, 3...)
+- `created_at` (Timestamp): When image was uploaded/added
+
+**Key Features**:
+- **Multiple Images**: Each product can have up to 5 images (enforced in admin workflow)
+- **Primary Image**: One image marked as primary for thumbnails and cards
+- **External Hosting**: URLs point to external image hosting (no blob storage in database)
+- **Ordering**: Display order maintains consistent gallery sequence
+
+**Usage**:
+- Product Cards: Display primary image (is_primary = true)
+- Product Details: Show all images in carousel/gallery
+- Cart Items: Display primary image next to product name
+- Order Confirmation: Show primary image for each ordered item
+
+**Relationships**:
+- Many product_images → One product (foreign key constraint)
+
+**Data Validation** (enforced in n8n):
+- At least one image required per product
+- Valid URL format checked
+- Accessible image (HTTP 200 response)
+- One and only one primary image per product
+
+---
+
+### 3. cart
+
+**Purpose**: Represents individual shopping carts for logged-in users.
+
+**Columns**:
+- `id` (UUID): Unique identifier for each cart, primary key
+- `user_id` (UUID): Foreign key linking to auth.users (Supabase Auth)
+- `created_at` (Timestamp): When cart was first created
+- `updated_at` (Timestamp): Last time cart was modified
+
+**Key Features**:
+- **One Cart Per User**: Each authenticated user has exactly one active cart
+- **Persistent**: Cart survives browser close, logout, and device switches
+- **Session-Independent**: Stored in database, not browser localStorage
+- **Auto-Creation**: Created automatically on first "Add to Cart" action
+
+**Usage**:
+- Implicitly referenced when user adds items to cart
+- Not directly queried (cart_items table contains actual data)
+- Provides user-cart relationship for cart_items
+
+**Relationships**:
+- One cart → One user (auth.users)
+- One cart → Many cart_items
+
+**Lifecycle**:
+- **Creation**: First time user adds product to cart
+- **Updates**: Modified timestamp updates on cart item changes
+- **Deletion**: Cleared when order is placed (cart_items deleted)
+- **Persistence**: Remains in database even if empty (for future use)
+
+---
+
+### 4. cart_items
+
+**Purpose**: Individual products added to a user's cart with quantities.
+
+**Columns**:
+- `id` (UUID): Unique identifier for each cart item, primary key
+- `cart_id` (UUID): Foreign key linking to cart table
+- `product_id` (UUID): Foreign key linking to products table
+- `quantity` (Integer): Number of units of this product in cart (minimum 1)
+- `created_at` (Timestamp): When item was first added to cart
+- `updated_at` (Timestamp): Last time quantity was changed
+
+**Key Features**:
+- **Quantity Management**: Users can update quantities without removing/re-adding
+- **Real-Time Pricing**: Price always fetched from products table (reflects current price)
+- **Stock Validation**: n8n workflows check stock before allowing add/update
+- **Unique Products**: One row per product per cart (quantities aggregate)
+
+**Usage**:
+- Cart Page: Display all items in user's cart with quantities and subtotals
+- Cart Badge: Count total items (sum of all quantities)
+- Checkout: Fetch cart items to create order
+- Stock Validation: Check product availability before checkout
+
+**Relationships**:
+- Many cart_items → One cart
+- Many cart_items → One product
+
+**Data Integrity**:
+- **Referential Integrity**: If product deleted, cart_items remain (shows "Product no longer available")
+- **Quantity Constraints**: Minimum 1, maximum validated against stock
+- **Uniqueness**: Database constraint prevents duplicate product_id per cart_id
+
+**Lifecycle**:
+- **Add**: Insert new row when user adds product to cart
+- **Update**: Modify quantity when user changes amount
+- **Remove**: Delete row when user removes item or quantity = 0
+- **Clear**: All cart_items deleted when order is placed
+
+---
+
+### 5. orders
+
+**Purpose**: Confirmed customer orders with shipping details and payment information.
+
+**Columns**:
+- `id` (UUID): Unique identifier for each order, primary key
+- `user_id` (UUID): Foreign key linking to auth.users (customer who placed order)
+- `order_number` (Text): Human-readable order identifier (e.g., "ORD-20241218-001")
+- `total_amount` (Numeric/Decimal): Total order value in dollars (sum of all order_items)
+- `status` (Text): Current order state (pending, confirmed, processing, shipped, delivered, cancelled)
+- `payment_method` (Text): How customer will pay (currently "COD" - Cash on Delivery)
+- `shipping_address` (JSONB): Complete address stored as JSON object
+- `phone_number` (Text): Customer contact number for delivery
+- `notes` (Text): Optional delivery instructions or customer comments
+- `created_at` (Timestamp): When order was placed
+- `updated_at` (Timestamp): Last status change or modification
+
+**Key Features**:
+- **Unique Order Numbers**: Sequential, date-based identifiers for customer reference
+- **Order Status Tracking**: Status field updated through order lifecycle
+- **JSONB Address**: Flexible address storage (street, city, state, postal_code, country)
+- **Immutable Total**: Total calculated at checkout, not recalculated later
+- **Status History**: Updated timestamp tracks last status change
+
+**Shipping Address Structure** (JSONB):
+```json
+{
+  "full_name": "John Doe",
+  "street": "123 Main Street, Apt 4B",
+  "city": "New York",
+  "state": "NY",
+  "postal_code": "10001",
+  "country": "United States"
+}
+```
+
+**Order Status Lifecycle**:
+1. **pending**: Initial state, awaiting admin confirmation
+2. **confirmed**: Admin verified order, will be processed
+3. **processing**: Order being prepared/packed
+4. **shipped**: Order dispatched to customer
+5. **delivered**: Order successfully delivered
+6. **cancelled**: Order cancelled by admin or customer
+
+**Usage**:
+- Order Confirmation Page: Display order details after checkout
+- Orders Page: List all customer orders with status
+- Order Details Page: Show complete order information
+- Admin Panel: Manage and update order statuses
+- Email Notifications: Trigger emails on status changes
+
+**Relationships**:
+- One order → One user (auth.users)
+- One order → Many order_items
+
+**Data Integrity**:
+- **Immutable After Creation**: Core order data (total, payment method) never changes
+- **Status Updates Only**: Only status, notes, and updated_at can be modified post-creation
+- **Required Fields**: user_id, order_number, total_amount, status, shipping_address, phone_number
+
+---
+
+### 6. order_items
+
+**Purpose**: Individual products within an order with quantities and prices at time of purchase.
+
+**Columns**:
+- `id` (UUID): Unique identifier for each order item, primary key
+- `order_id` (UUID): Foreign key linking to orders table
+- `product_id` (UUID): Foreign key linking to products table
+- `quantity` (Integer): Number of units ordered (matches cart_items at checkout)
+- `price_at_purchase` (Numeric/Decimal): Product price when order was placed
+- `created_at` (Timestamp): When order item was created (same as order creation)
+
+**Key Features**:
+- **Price Snapshot**: Captures product price at purchase time (immune to future price changes)
+- **Product Reference**: Links to original product (for name, image lookup)
+- **Quantity Record**: Permanent record of units purchased
+- **Order Breakdown**: Itemized list for order details and receipts
+
+**Why price_at_purchase?**:
+- Product prices change over time
+- Customer should see price they paid, not current price
+- Invoices and order history must show accurate past pricing
+- Example:
+  - Customer orders T-shirt at $25 on Jan 1
+  - Store raises price to $30 on Jan 15
+  - Order history still shows $25 (price_at_purchase)
+  - Current product price is $30 (products.price)
+
+**Usage**:
+- Order Confirmation: Show itemized list of products with quantities
+- Order Details: Display each product, quantity, and price paid
+- Order History: Calculate order totals from order_items
+- Admin Panel: View order contents for fulfillment
+- Receipts/Invoices: Generate itemized billing (future feature)
+
+**Relationships**:
+- Many order_items → One order
+- Many order_items → One product (reference only, not constraint)
+
+**Data Calculation**:
+- **Subtotal**: quantity × price_at_purchase
+- **Order Total**: Sum of all order_items subtotals
+- **Item Count**: Count of order_items rows (distinct products ordered)
+
+**Data Integrity**:
+- **Immutable**: Never updated after creation
+- **Snapshot**: product_id reference may become stale if product deleted (that's okay)
+- **Referential Integrity**: order_id must exist in orders table
+
+---
+
+### 7. user_feedback
+
+**Purpose**: Structured feedback submitted through the feedback form (feedback.html).
+
+**Columns**:
+- `id` (UUID): Unique identifier for each feedback entry, primary key
+- `user_id` (UUID): Foreign key linking to auth.users (who submitted feedback)
+- `user_email` (Text): Email address of user (redundant but useful for reporting)
+- `feedback_type` (Text): Category of feedback (Order, Product, Experience, Support, Other)
+- `rating` (Integer): Numerical rating from 1-5 stars
+- `actual_feedback` (Text): Main feedback comment (minimum 10 characters)
+- `suggestions` (Text): Optional improvement suggestions from user
+- `sentiment` (Text): Analyzed sentiment (positive, negative, neutral, mixed)
+- `created_at` (Timestamp): When feedback was submitted
+
+**Key Features**:
+- **Structured Data**: Categorized feedback for easier analysis
+- **Rating System**: Quantitative measure (1-5) for metric tracking
+- **Sentiment Analysis**: Can be populated by AI analysis (n8n + OpenAI)
+- **User Attribution**: Links to user account for follow-up
+- **Optional Suggestions**: Separate field for actionable improvement ideas
+
+**Feedback Types**:
+- **Order**: Issues with delivery, packaging, fulfillment
+- **Product**: Product quality, description accuracy, defects
+- **Experience**: Website usability, checkout process, navigation
+- **Support**: Customer service interactions, help desk
+- **Other**: General comments, miscellaneous feedback
+
+**Sentiment Classification**:
+- **positive**: Happy customers, praise, satisfaction
+- **negative**: Complaints, issues, dissatisfaction
+- **neutral**: Factual statements, neither positive nor negative
+- **mixed**: Contains both positive and negative elements
+
+**Usage**:
+- Admin Dashboard: Review customer feedback trends
+- Product Improvement: Identify recurring product issues
+- Experience Optimization: Find UX pain points
+- Customer Service: Follow up on negative feedback
+- Analytics: Track satisfaction scores over time
+
+**Relationships**:
+- Many user_feedback → One user (auth.users)
+
+**Data Privacy**:
+- User can choose to submit feedback anonymously (future feature)
+- Email stored for potential follow-up
+- No sensitive personal information collected
+
+---
+
+### 8. chatbot_feedback
+
+**Purpose**: Feedback collected through AI chatbot interactions (thumbs up/down, ratings).
+
+**Columns**:
+- `id` (UUID): Unique identifier for each feedback entry, primary key
+- `user_id` (UUID): Foreign key linking to auth.users (may be null for anonymous)
+- `feedback` (Text): Freeform feedback text or reaction (e.g., "helpful", "not helpful")
+- `sentiment` (Text): Analyzed sentiment (positive, negative, neutral)
+- `created_at` (Timestamp): When feedback was submitted
+
+**Key Features**:
+- **Unstructured**: More conversational than user_feedback (no fixed categories)
+- **Chatbot-Specific**: Captures AI assistant performance feedback
+- **Anonymous Option**: user_id can be null if user not logged in
+- **Real-Time**: Submitted during chat session, not separate form
+- **AI Training Data**: Can be used to improve chatbot responses
+
+**Usage**:
+- Chatbot Improvement: Identify failing conversation patterns
+- Agent Performance: Track which agents (product, cart, order) perform well
+- User Satisfaction: Measure chatbot helpfulness
+- Response Quality: Find responses that need improvement
+- Model Fine-Tuning: Collect data for future AI model training
+
+**Relationships**:
+- Many chatbot_feedback → One user (auth.users) [optional relationship]
+
+**Difference from user_feedback**:
+- **user_feedback**: Structured form submission about store/products/experience
+- **chatbot_feedback**: Informal reactions to chatbot conversations
+- **user_feedback**: Always authenticated
+- **chatbot_feedback**: Can be anonymous
+
+**Sentiment Analysis**:
+- Populated by AI analysis of feedback text
+- Helps identify patterns in chatbot performance
+- Tracks positive vs. negative user reactions
+
+---
+
+## Authentication & User Management
+
+### Supabase Auth System
+
+**auth.users Table** (Managed by Supabase):
+- Created automatically by Supabase Auth
+- Not directly modified by application code
+- Contains user credentials, email, metadata
+- Secured by Supabase infrastructure
+
+**User Registration Flow**:
+1. User fills registration form (register.html)
+2. Frontend calls Supabase Auth API: `signUp(email, password, metadata)`
+3. Supabase creates user in `auth.users` table
+4. Supabase sends verification email (optional, configurable)
+5. User verifies email (if required)
+6. User can now log in
+
+**User Login Flow**:
+1. User enters credentials (login.html)
+2. Frontend calls Supabase Auth API: `signInWithPassword(email, password)`
+3. Supabase validates credentials
+4. Supabase returns JWT session token
+5. Token stored in browser (managed by Supabase client)
+6. Token included in subsequent requests
+
+**Session Management**:
+- **JWT Tokens**: Supabase issues JSON Web Tokens for authentication
+- **Token Storage**: Stored securely in browser by Supabase client
+- **Expiration**: Tokens expire after set period (default 1 hour)
+- **Refresh**: Automatic token refresh before expiration
+- **Logout**: Token invalidated on logout
+
+**User Identification in Workflows**:
+- Frontend includes `user_id` in all n8n webhook requests
+- n8n validates `user_id` exists in `auth.users` before processing
+- Prevents unauthorized access to other users' data
+
+---
+
+## Security Architecture
+
+### Access Control Layers
+
+**Layer 1 - Frontend Authentication**:
+- Supabase client verifies user is logged in
+- Protected pages redirect to login if no session
+- Session token stored securely (httpOnly cookies where possible)
+
+**Layer 2 - n8n Authorization**:
+- Validates `user_id` exists in `auth.users`
+- Checks user owns requested resources (orders, cart)
+- Admin operations require email whitelist check
+- Service Role Key never exposed to frontend
+
+**Layer 3 - Database Constraints**:
+- Foreign key constraints enforce referential integrity
+- Unique constraints prevent duplicate data
+- Check constraints validate data ranges (e.g., price > 0)
+- Supabase Row Level Security (RLS) as fallback (though bypassed by Service Role Key)
+
+### Service Role Key Security
+
+**What is Service Role Key?**:
+- Special Supabase credential with full database access
+- Bypasses Row Level Security policies
+- Used by n8n for all database operations
+- Should never be exposed to frontend
+
+**Why Use Service Role Key?**:
+- **Centralized Logic**: All business rules enforced in n8n
+- **Simplified Frontend**: No complex security rules in client code
+- **Flexibility**: Can access any table, perform any operation
+- **Performance**: No RLS overhead on queries
+- **Audit Trail**: All operations logged in n8n
+
+**Security Best Practices**:
+- Stored as environment variable in n8n (never in workflow code)
+- Never logged or exposed in responses
+- Rotated periodically (quarterly or after security incidents)
+- Restricted to n8n server IP (if using Supabase RLS filters)
+
+### Data Privacy & Compliance
+
+**Personal Data Stored**:
+- Email address (auth.users, user_feedback)
+- Name (in order shipping_address)
+- Phone number (orders.phone_number)
+- Shipping addresses (orders.shipping_address)
+- Order history (orders, order_items)
+
+**Data Protection Measures**:
+- All connections encrypted (TLS/SSL)
+- Database backups encrypted at rest
+- No credit card data stored (COD only)
+- User passwords hashed by Supabase (bcrypt)
+- JWT tokens expire automatically
+
+**GDPR Compliance Considerations**:
+- User can request data deletion (manual process currently)
+- Data export possible (query all user's tables)
+- Consent tracked (terms checkbox on registration)
+- Data minimization (only necessary fields stored)
+- Right to be forgotten (can delete user and cascade)
+
+**Data Retention**:
+- Active user data: Indefinite
+- Order history: Indefinite (business requirement)
+- Cart data: Persists until order placed
+- Feedback: Indefinite (analytics)
+- Deleted users: Cascade delete or anonymize (configurable)
+
+---
+
+## Database Performance Considerations
+
+### Indexing Strategy
+
+**Automatic Indexes**:
+- Primary keys (id columns): Automatically indexed
+- Foreign keys: Automatically indexed by PostgreSQL
+- Unique constraints: Create implicit indexes
+
+**Recommended Indexes** (for production):
+- `products.category`: Filter products by category
+- `products.is_active`: Filter active/inactive products
+- `cart_items.cart_id`: Join cart items to cart
+- `order_items.order_id`: Join order items to orders
+- `orders.user_id`: Fetch user's orders
+- `orders.status`: Filter orders by status
+- `orders.created_at`: Sort orders by date
+
+**Full-Text Search** (future enhancement):
+- Index on `products.name` and `products.description`
+- Enable PostgreSQL full-text search for product search feature
+
+### Query Optimization
+
+**n8n Workflow Patterns**:
+- **Batch Queries**: Fetch related data in single query (JOIN)
+- **Limit Results**: Use LIMIT for paginated data
+- **Select Specific Columns**: Avoid SELECT * in workflows
+- **Use Transactions**: Atomic operations for order placement
+
+**Example Optimization** (Get Products with Images):
+- **Inefficient**: Query products, then loop and query images for each
+- **Efficient**: Single JOIN query fetches products with all images
+
+### Scalability Considerations
+
+**Current Scale**:
+- Suitable for 10,000-100,000 products
+- Handles 1,000-10,000 concurrent users
+- Order processing: 100+ orders per hour
+- Cart operations: 1,000+ per minute
+
+**Scaling Strategies** (when needed):
+- **Read Replicas**: Separate database for read queries (Supabase feature)
+- **Connection Pooling**: Manage database connections efficiently (built-in)
+- **Caching**: Cache product data in n8n or add Redis layer
+- **Table Partitioning**: Partition large tables (orders) by date
+- **Archive Strategy**: Move old orders to archive table
+
+---
+
+## Database Backup & Recovery
+
+### Automatic Backups
+
+**Supabase Backup Features**:
+- **Daily Backups**: Automatic daily snapshots (free tier: 7 days retention)
+- **Point-in-Time Recovery**: Restore to any point in time (paid tiers)
+- **Cross-Region Replication**: Backup stored in different geographic region
+- **Automated**: No manual intervention required
+
+**Backup Schedule**:
+- Daily at 2:00 AM UTC (configurable)
+- Incremental backups throughout the day
+- Full backup weekly
+
+### Disaster Recovery
+
+**Recovery Time Objective (RTO)**:
+- Target: < 1 hour to restore from backup
+- Supabase provides self-service restore in dashboard
+
+**Recovery Point Objective (RPO)**:
+- Target: < 24 hours of data loss (daily backups)
+- Point-in-time recovery reduces to minutes (paid tiers)
+
+**Recovery Procedure**:
+1. Identify issue (data corruption, accidental deletion)
+2. Stop all n8n workflows (prevent further changes)
+3. Access Supabase dashboard
+4. Select backup to restore from
+5. Restore database (creates new instance)
+6. Update n8n Supabase URL to restored instance
+7. Test critical workflows
+8. Resume normal operations
+
+---
+
+## Database Maintenance
+
+### Routine Maintenance Tasks
+
+**Automated by Supabase**:
+- Vacuum operations (clean up dead rows)
+- Analyze statistics (update query planner)
+- Index maintenance (rebuild if needed)
+- Log rotation
+- Security patches
+
+**Manual Tasks** (periodic):
+- Review slow query logs (identify optimization opportunities)
+- Check table sizes (plan for scaling)
+- Audit user accounts (remove test/inactive users)
+- Review feedback data (extract insights)
+- Archive old orders (if implementing archival strategy)
+
+### Monitoring & Alerts
+
+**Supabase Dashboard**:
+- Database size usage
+- Connection count
+- Query performance metrics
+- Backup status
+- API usage statistics
+
+**n8n Monitoring**:
+- Track workflow execution failures
+- Monitor database query errors
+- Alert on slow queries (> 1 second)
+- Track failed database operations
+
+**Custom Alerts** (recommended):
+- Database size approaching limit (>80% capacity)
+- Unusual order volume (spike detection)
+- Cart abandonment rate (business metric)
+- Feedback sentiment trends (negative spike)
+
+---
+
+## Database Migration Strategy
+
+### Schema Changes
+
+**Adding New Tables**:
+1. Create table in Supabase dashboard or SQL editor
+2. Define columns, types, constraints
+3. Add foreign keys if needed
+4. Update n8n workflows to use new table
+5. Test workflows thoroughly
+6. Deploy to production
+
+**Adding New Columns**:
+1. Add column to existing table (ALTER TABLE)
+2. Set default value if NOT NULL
+3. Update n8n workflows to populate new column
+4. Update frontend if displaying new data
+5. Backfill existing rows if necessary
+
+**Modifying Columns**:
+- Avoid changing column types (risk of data loss)
+- Prefer adding new column, migrating data, dropping old column
+- Test migration on staging database first
+
+### Data Migration
+
+**Exporting Data**:
+- Supabase dashboard: Export as CSV
+- SQL dump: Full database backup as SQL file
+- API export: Use Supabase REST API for programmatic export
+
+**Importing Data**:
+- CSV import via Supabase dashboard
+- SQL restore: Run SQL file to recreate data
+- Bulk insert: Use n8n workflows for large datasets
+
+**Migration Checklist**:
+- [ ] Backup current database
+- [ ] Test migration on staging database
+- [ ] Document schema changes
+- [ ] Update n8n workflows
+- [ ] Update frontend (if needed)
+- [ ] Test all affected workflows
+- [ ] Deploy to production during low-traffic window
+- [ ] Monitor for errors post-migration
+- [ ] Keep backup for 7 days (rollback option)
+
+---
+
+## Database Design Best Practices
+
+### Principles Followed
+
+**Normalization**:
+- Third Normal Form (3NF) achieved
+- Eliminates data redundancy
+- Separate tables for entities (products, orders, users)
+- Join tables for relationships (cart_items, order_items)
+
+**Data Integrity**:
+- Foreign keys enforce referential integrity
+- Unique constraints prevent duplicates
+- Check constraints validate data (e.g., quantity > 0)
+- NOT NULL constraints for required fields
+
+**Scalability**:
+- UUIDs allow distributed systems (no auto-increment conflicts)
+- Separate tables for large data (product_images)
+- JSONB for flexible data (shipping_address)
+- Indexes on frequently queried columns
+
+**Maintainability**:
+- Descriptive table and column names
+- Consistent naming conventions (snake_case)
+- Timestamps for audit trail (created_at, updated_at)
+- Soft deletes where appropriate (is_active flag)
+
+**Security**:
+- No sensitive data in plain text
+- User passwords managed by Supabase Auth
+- Service Role Key for backend operations only
+- JWT tokens for frontend authentication
+
+---
+
+## Future Enhancements
+
+### Potential Database Additions
+
+**Analytics Tables**:
+- `product_views`: Track product page visits
+- `search_queries`: Store search terms for analysis
+- `abandoned_carts`: Track cart abandonment for recovery
+
+**Enhanced Order Management**:
+- `order_status_history`: Track all status changes with timestamps
+- `shipment_tracking`: Store tracking numbers and carrier info
+- `refunds`: Record refund requests and processing
+
+**Marketing & Engagement**:
+- `wishlists`: Save products for later
+- `product_reviews`: Customer ratings and reviews
+- `discounts`: Coupon codes and promotional pricing
+
+**Inventory Management**:
+- `stock_alerts`: Low stock notifications
+- `suppliers`: Vendor information
+- `purchase_orders`: Restock orders from suppliers
+
+**Customer Service**:
+- `support_tickets`: Customer inquiries and issues
+- `ticket_messages`: Conversation history
+- `return_requests`: Product return management
+
+---
+
+## Conclusion
+
+The ShopHub database design provides a solid foundation for e-commerce operations while maintaining simplicity and clarity. Key architectural decisions include:
+
+- **Relational Structure**: Normalized tables with clear relationships
+- **Supabase Auth**: Managed authentication eliminates custom auth code
+- **Service Role Key**: Centralized data access through n8n backend
+- **UUID Primary Keys**: Scalable and secure identifiers
+- **JSONB Flexibility**: Shipping addresses adapt to various formats
+- **Price Snapshots**: Order history immune to future price changes
+- **Soft Deletes**: Products remain in database for historical orders
+
+The design balances several concerns:
+- **Developer Experience**: Simple, understandable schema
+- **Business Requirements**: Captures all necessary e-commerce data
+- **Scalability**: Ready for growth to thousands of products and users
+- **Security**: Multi-layer access control protects user data
+- **Maintainability**: Easy to modify and extend
+
+By leveraging Supabase's managed PostgreSQL service, the application gains enterprise-grade database capabilities without operational overhead. The three-layer access model (frontend → n8n → Supabase) ensures security while keeping the architecture straightforward and auditable.
+
+---
