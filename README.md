@@ -7861,3 +7861,660 @@ ShopHub provides a **solid foundation** that grows with your business. The archi
 The beauty of this architecture is that **you're never locked in**. Each enhancement is an independent module that can be added, modified, or replaced without disrupting the core system. Start where you are, add what you need, grow when you're ready.
 
 ---
+# Glossary for Non-Technical Readers
+
+## Overview
+
+This glossary explains technical terms used throughout the ShopHub documentation in simple, everyday language. If you encounter unfamiliar terminology while reading about the system, refer to this section for clear explanations without technical jargon.
+
+Terms are organized alphabetically with practical examples to help you understand how each concept applies to ShopHub.
+
+---
+
+## A
+
+### Agent
+
+**Simple Definition**: A specialized AI assistant that handles one specific type of task.
+
+**Real-World Analogy**: Think of agents like different employees in a store—one handles product questions, another manages the cash register, and another processes returns. Each is an expert in their area.
+
+**In ShopHub**: The chatbot uses five agents:
+- **Product Agent**: Answers questions about products (prices, features, availability)
+- **Cart Agent**: Helps add, remove, or view items in your shopping cart
+- **Order Agent**: Tracks orders and provides shipping information
+- **Feedback Agent**: Collects customer opinions and suggestions
+- **Intent Classifier Agent**: Figures out which other agent should help you
+
+**Example**: When you ask "What's in my cart?", the Intent Classifier Agent recognizes this is a cart question and routes it to the Cart Agent, which then retrieves and displays your items.
+
+---
+
+### API (Application Programming Interface)
+
+**Simple Definition**: A set of rules that allows different software systems to talk to each other.
+
+**Real-World Analogy**: Like a waiter in a restaurant—you (the customer) don't go directly to the kitchen. You tell the waiter your order, the waiter communicates with the kitchen, and brings back your food. The waiter is the "API" between you and the kitchen.
+
+**In ShopHub**: The frontend (website) uses APIs to request information from the backend (n8n workflows):
+- "Get all products" API → Backend retrieves products from database
+- "Add to cart" API → Backend adds item to your cart
+- "Place order" API → Backend creates your order
+
+**Example**: When you click "Add to Cart," the website doesn't directly change the database. It sends a request through an API to the backend, which validates the request and updates your cart.
+
+---
+
+### Authentication
+
+**Simple Definition**: The process of verifying who you are, typically through a username and password.
+
+**Real-World Analogy**: Like showing your ID to enter a restricted building—authentication proves you are who you claim to be.
+
+**In ShopHub**: When you log in with your email and password, Supabase Authentication checks your credentials and grants you access to your personal data (orders, cart, account details).
+
+**Types in ShopHub**:
+- **User Authentication**: Customers log in to view orders and manage cart
+- **Admin Authentication**: Admins log in with email whitelist + admin password
+
+**Example**: You can only view *your* orders because authentication identifies you and ensures you don't see other customers' information.
+
+---
+
+## B
+
+### Backend
+
+**Simple Definition**: The "behind-the-scenes" part of a website that handles logic, data storage, and processing that users don't see.
+
+**Real-World Analogy**: Like the kitchen and storage area of a restaurant—customers never see it, but that's where food is prepared, inventory is managed, and recipes are followed.
+
+**In ShopHub**: n8n workflows serve as the backend, handling:
+- Processing orders
+- Managing shopping carts
+- Validating product availability
+- Sending confirmation emails
+- Running the AI chatbot
+
+**Example**: When you place an order, the backend checks that products are in stock, calculates the total, creates the order in the database, updates inventory, and sends you a confirmation email—all invisible to you.
+
+---
+
+## C
+
+### CDN (Content Delivery Network)
+
+**Simple Definition**: A network of servers around the world that delivers website content quickly by serving it from the closest location to you.
+
+**Real-World Analogy**: Like having multiple copies of a popular book in bookstores across the country, so you can buy it locally instead of ordering from a single warehouse far away.
+
+**In ShopHub**: GitHub Pages uses a CDN to serve the website, meaning:
+- Faster loading times worldwide
+- Images and pages load from nearby servers
+- Handles traffic spikes automatically
+
+**Example**: A customer in New York and a customer in Tokyo both get the website served from nearby servers, so both experience fast load times.
+
+---
+
+### Cache / Caching
+
+**Simple Definition**: Temporarily storing frequently used information in a quick-access location to speed up future requests.
+
+**Real-World Analogy**: Like keeping your most-used spices on the kitchen counter instead of walking to the pantry every time you need them.
+
+**In ShopHub**: The system caches:
+- Product images (stored in browser after first load)
+- User session data (so you stay logged in)
+- Product catalog (to avoid querying database repeatedly)
+
+**Example**: When you visit the products page a second time, it loads faster because your browser cached the product images from your first visit.
+
+---
+
+### COD (Cash on Delivery)
+
+**Simple Definition**: A payment method where customers pay in cash when their order is delivered, not online.
+
+**Real-World Analogy**: Like ordering pizza and paying the delivery driver at your door instead of paying online.
+
+**In ShopHub**: Currently the only payment method supported. Customers place orders online but pay the delivery person when they receive their items.
+
+**Example**: You order a shirt online for $25. When it arrives at your home, you hand the delivery person $25 in cash.
+
+---
+
+## D
+
+### Database
+
+**Simple Definition**: An organized collection of information stored electronically, like a digital filing cabinet.
+
+**Real-World Analogy**: Like a library's card catalog system that keeps track of all books, who borrowed them, and when they're due—but digital and much faster.
+
+**In ShopHub**: Supabase PostgreSQL database stores all information:
+- **Products**: Names, prices, descriptions, stock quantities
+- **Orders**: What customers bought, shipping addresses, order status
+- **Carts**: Items customers are considering purchasing
+- **Users**: Customer accounts and login information
+- **Feedback**: Customer reviews and suggestions
+
+**Example**: When you add a product to your cart, that information is stored in the database. Later, even if you close your browser and come back tomorrow, your cart items are still there because they're saved in the database.
+
+---
+
+### Deployment
+
+**Simple Definition**: The process of making a website or application available on the internet for users to access.
+
+**Real-World Analogy**: Like opening a physical store—you've built and furnished it, and now you're unlocking the doors for customers to come in.
+
+**In ShopHub**: Deployment involves:
+- Pushing website files to GitHub Pages (frontend goes live)
+- Activating n8n workflows (backend starts working)
+- Configuring Supabase database (data storage ready)
+
+**Example**: After deployment, typing the website URL in a browser brings up the live ShopHub store that anyone can visit.
+
+---
+
+## E
+
+### Endpoint
+
+**Simple Definition**: A specific web address (URL) that performs one particular function when contacted.
+
+**Real-World Analogy**: Like different phone extensions in a company—dial extension 101 for sales, 102 for support, 103 for billing. Each extension serves a specific purpose.
+
+**In ShopHub**: n8n creates endpoints (webhooks) for different operations:
+- `/webhook/get_products` → Returns list of products
+- `/webhook/add_to_cart` → Adds item to cart
+- `/webhook/place_order` → Creates an order
+
+**Example**: When you click "Add to Cart," the website contacts the `add_to_cart` endpoint, which handles adding that specific product to your cart.
+
+---
+
+### Execution (Workflow Execution)
+
+**Simple Definition**: A single run of a workflow from start to finish.
+
+**Real-World Analogy**: Like following a recipe one time—from gathering ingredients to serving the finished dish. Each time you make the recipe, that's one "execution."
+
+**In ShopHub**: Each action triggers a workflow execution:
+- Customer adds item to cart → One execution of "Add to Cart" workflow
+- 100 customers place orders today → 100 executions of "Place Order" workflow
+
+**Example**: If 500 customers visit the products page today, that's 500 executions of the "Get Products" workflow.
+
+---
+
+## F
+
+### Frontend
+
+**Simple Definition**: The part of a website that users see and interact with directly.
+
+**Real-World Analogy**: Like the storefront and display windows of a shop—everything customers can see, touch, and interact with.
+
+**In ShopHub**: Everything visible in your web browser:
+- Product pages with photos and descriptions
+- Shopping cart interface
+- Checkout form
+- Navigation menus and buttons
+- Chatbot window
+
+**Example**: When you browse products, add items to cart, or chat with the AI assistant, you're interacting with the frontend.
+
+---
+
+## G
+
+### GitHub Pages
+
+**Simple Definition**: A free web hosting service by GitHub that publishes websites directly from code stored in GitHub repositories.
+
+**Real-World Analogy**: Like a bulletin board where you pin up your flyers, but in this case, you're posting a complete website that anyone can visit.
+
+**In ShopHub**: Hosts the entire frontend (website files), making the store accessible to customers worldwide.
+
+**Benefits**:
+- Free hosting (no monthly fees)
+- Automatic updates when code changes
+- Fast loading through global CDN
+- Secure HTTPS connections
+
+**Example**: The ShopHub website lives at a URL like `username.github.io/shophub-frontend`.
+
+---
+
+## H
+
+### HTTPS (Secure HTTP)
+
+**Simple Definition**: A secure way to transfer information between your browser and a website, encrypting data so others can't read it.
+
+**Real-World Analogy**: Like sending a letter in a locked box instead of an open envelope—only the intended recipient can open and read it.
+
+**In ShopHub**: All connections use HTTPS:
+- Login credentials encrypted
+- Order information protected
+- Payment details secure (when added in future)
+
+**Visual Indicator**: Look for the padlock icon 🔒 in your browser's address bar.
+
+**Example**: When you log in, HTTPS ensures hackers can't intercept your password as it travels to the server.
+
+---
+
+## I
+
+### Integration
+
+**Simple Definition**: Connecting two different software systems so they can work together and share information.
+
+**Real-World Analogy**: Like connecting your phone to your car via Bluetooth—two separate devices working together seamlessly.
+
+**In ShopHub**: n8n integrates multiple services:
+- Supabase (database and authentication)
+- OpenAI (AI chatbot intelligence)
+- Email services (Gmail, SendGrid for notifications)
+- Payment gateways (Stripe, PayPal—future feature)
+
+**Example**: When an order is placed, n8n integrates with Supabase to store the order and with an email service to send you a confirmation message—two systems working together.
+
+---
+
+## J
+
+### JSON (JavaScript Object Notation)
+
+**Simple Definition**: A format for organizing and exchanging data between systems in a structured, readable way.
+
+**Real-World Analogy**: Like organizing information in labeled folders and subfolders—everything has a clear place and label.
+
+**In ShopHub**: JSON is used to send data between frontend and backend:
+
+```
+Product Information (JSON format):
+{
+  "name": "Blue Cotton T-Shirt",
+  "price": 25.00,
+  "stock": 50,
+  "category": "Clothing"
+}
+```
+
+**Example**: When the frontend asks for product information, the backend responds with JSON containing all product details neatly organized.
+
+---
+
+## L
+
+### Localhost
+
+**Simple Definition**: A special address that refers to your own computer, used for testing websites before making them public.
+
+**Real-World Analogy**: Like practicing a presentation in your bedroom mirror before presenting to an audience—it's private and only you can see it.
+
+**In ShopHub Development**: Developers test changes on localhost:
+- URL: `http://localhost:5678` (n8n running locally)
+- Only accessible from their own computer
+- Safe environment to test features before going live
+
+**Example**: A developer modifies the checkout process and tests it at `localhost` to make sure it works before deploying to the live website.
+
+---
+
+## N
+
+### n8n
+
+**Simple Definition**: A workflow automation platform where you create business processes using visual flowcharts instead of writing code.
+
+**Real-World Analogy**: Like building with LEGO blocks—you connect pre-made pieces (nodes) to create complex structures (workflows) without starting from scratch.
+
+**In ShopHub**: n8n serves as the entire backend:
+- Handles all business logic (order processing, cart management)
+- Runs the AI chatbot
+- Connects to database and email services
+- Processes customer actions (add to cart, place order)
+
+**Why Visual?**: Instead of writing code, you see boxes and arrows showing how data flows, making it easier to understand and modify.
+
+**Example**: The "Place Order" workflow in n8n is a visual diagram showing each step: validate cart → calculate total → create order → update inventory → send email.
+
+---
+
+### Node (n8n Node)
+
+**Simple Definition**: A single building block in an n8n workflow that performs one specific action.
+
+**Real-World Analogy**: Like a station on an assembly line—each station does one job (tighten bolts, attach wheels, paint), and together they build the final product.
+
+**In ShopHub**: Common nodes include:
+- **Webhook Node**: Receives requests from frontend
+- **Supabase Node**: Queries or updates database
+- **OpenAI Node**: Processes AI chatbot conversations
+- **Email Node**: Sends notifications
+- **If/Switch Node**: Makes decisions (if stock > 0, proceed)
+
+**Example**: In the "Add to Cart" workflow, there's a Supabase node that inserts the cart item into the database.
+
+---
+
+## P
+
+### PostgreSQL
+
+**Simple Definition**: A powerful, reliable database system that stores and manages structured data.
+
+**Real-World Analogy**: Like an extremely well-organized filing system where everything is indexed, cross-referenced, and can be found instantly.
+
+**In ShopHub**: Supabase uses PostgreSQL to store:
+- Product catalog (names, prices, images)
+- Customer orders and order history
+- Shopping carts
+- User accounts
+- Feedback and reviews
+
+**Why PostgreSQL?**: Industry-standard, handles millions of records, supports complex queries, highly reliable.
+
+**Example**: When you search for "blue shirts," PostgreSQL quickly finds all matching products from thousands of items in the catalog.
+
+---
+
+## R
+
+### Real-Time Updates
+
+**Simple Definition**: Information that updates automatically and instantly without needing to refresh the page.
+
+**Real-World Analogy**: Like a scoreboard at a sports game that updates the score immediately when points are scored—you don't need to ask what the score is.
+
+**Current State in ShopHub**: **Not implemented**—pages require manual refresh to see updates.
+
+**Example of What Would Be Real-Time**: Admin updates product stock from 10 to 5, and customers browsing that product page see the change instantly without refreshing.
+
+---
+
+### Row Level Security (RLS)
+
+**Simple Definition**: A database security feature that restricts which rows (records) each user can access based on their identity.
+
+**Real-World Analogy**: Like medical records—each patient can only see their own records, not other patients' records, even though all records are stored in the same filing system.
+
+**In ShopHub**: Though available in Supabase, RLS is bypassed because n8n uses the Service Role Key. Security is enforced in n8n workflows instead:
+- Users can only access their own orders
+- Admins can see all orders
+- Workflows validate permissions before returning data
+
+**Example**: When you request "my orders," the workflow checks your user ID and returns only orders linked to your account.
+
+---
+
+## S
+
+### Scalability
+
+**Simple Definition**: The ability of a system to handle growth—more users, more products, more orders—without breaking or becoming too slow.
+
+**Real-World Analogy**: Like a restaurant that can add more tables, hire more waiters, and expand the kitchen to serve more customers without compromising service quality.
+
+**In ShopHub**: Each component scales independently:
+- **Frontend (GitHub Pages)**: Automatically handles traffic increases
+- **Backend (n8n)**: Upgrade to higher plans or add more servers
+- **Database (Supabase)**: Upgrade to larger database sizes
+
+**Example**: Starting with 100 visitors/day, the system can grow to 10,000 visitors/day by upgrading service tiers without rebuilding the entire platform.
+
+---
+
+### Service Role Key
+
+**Simple Definition**: A special password that gives full access to the database, used by trusted backend systems.
+
+**Real-World Analogy**: Like a master key that opens every door in a building—only given to building management, never to tenants or visitors.
+
+**In ShopHub**: n8n uses the Service Role Key to:
+- Read any data from any table
+- Create, update, or delete any records
+- Bypass security restrictions
+
+**Security**: Never exposed to users or frontend code—stored securely in n8n environment variables.
+
+**Example**: When you place an order, n8n uses the Service Role Key to update multiple tables (orders, order_items, products) in a single transaction.
+
+---
+
+### Session
+
+**Simple Definition**: A temporary connection between you and a website that remembers who you are while you browse.
+
+**Real-World Analogy**: Like a wristband at an amusement park—once you get it at the entrance, you don't need to show your ticket again for each ride. The wristband proves you're authorized.
+
+**In ShopHub**: When you log in, a session is created:
+- Lasts until you log out or close browser
+- Remembers you're logged in across pages
+- Stores your user ID securely
+- Automatically expires after period of inactivity
+
+**Example**: You log in, browse products, add to cart, and go to checkout—all without logging in again. That's because the session remembers you.
+
+---
+
+### SSL/TLS Certificate
+
+**Simple Definition**: A digital certificate that encrypts information between your browser and the website, ensuring secure communication.
+
+**Real-World Analogy**: Like speaking in a secret code that only you and your friend understand—even if someone overhears, they can't decode the conversation.
+
+**In ShopHub**: Automatically provided by GitHub Pages and Supabase:
+- Encrypts login credentials
+- Protects order information
+- Enables HTTPS (padlock in browser)
+
+**Example**: When you enter your password, SSL/TLS encrypts it so hackers intercepting the connection only see gibberish.
+
+---
+
+### Supabase
+
+**Simple Definition**: A complete backend platform that provides a database, user authentication, and other backend services without requiring a traditional server.
+
+**Real-World Analogy**: Like a business-in-a-box service that provides a cash register, inventory system, and customer database all in one package, fully managed.
+
+**In ShopHub**: Supabase provides two core services:
+1. **PostgreSQL Database**: Stores all products, orders, users, feedback
+2. **Authentication**: Handles user registration, login, and session management
+
+**Why Supabase?**: Saves months of development time, handles security and backups, scales automatically, offers free tier.
+
+**Example**: When you create an account, Supabase securely stores your credentials and generates a session token, all without the team needing to build a custom authentication system.
+
+---
+
+## T
+
+### Tool (Chatbot Tool)
+
+**Simple Definition**: A specific function the AI chatbot can use to perform actions or retrieve information.
+
+**Real-World Analogy**: Like tools in a toolbox—a hammer for nails, screwdriver for screws. The chatbot has different tools for different tasks.
+
+**In ShopHub**: 12 tools available to chatbot agents:
+- **GET_PRODUCTS**: Fetch product information
+- **ADD_TO_CART**: Add items to shopping cart
+- **GET_USER_ORDERS**: Retrieve order history
+- **CANCEL_ORDER**: Cancel an order
+- **FEEDBACK_COLLECTOR**: Store customer feedback
+
+**How It Works**: When you ask "What's in my cart?", the Cart Agent decides to use the GET_CART_ITEMS tool to fetch your cart contents.
+
+**Example**: 
+- You: "Add the blue t-shirt to my cart"
+- Chatbot: *Uses ADD_TO_CART tool* → "I've added the Blue Cotton T-Shirt to your cart!"
+
+---
+
+## U
+
+### UI (User Interface)
+
+**Simple Definition**: Everything you see and interact with on a website or app—buttons, text, images, forms.
+
+**Real-World Analogy**: Like the dashboard and controls in a car—the steering wheel, pedals, and displays you interact with to operate the vehicle.
+
+**In ShopHub**: The UI includes:
+- Product cards showing images and prices
+- "Add to Cart" buttons
+- Shopping cart page
+- Checkout form
+- Navigation menu
+- Chatbot window
+
+**Good UI**: Easy to understand, intuitive to use, visually clear.
+
+**Example**: The product card UI shows you everything you need—image, name, price, stock status, and an "Add to Cart" button—all in one organized space.
+
+---
+
+### UUID (Universally Unique Identifier)
+
+**Simple Definition**: A special code that uniquely identifies something, guaranteed to never be duplicated.
+
+**Real-World Analogy**: Like a fingerprint—no two people have the same one, making it a perfect way to identify someone uniquely.
+
+**In ShopHub**: UUIDs are used as IDs for:
+- Products (each product has unique UUID)
+- Orders (each order has unique UUID)
+- Users (each customer account has unique UUID)
+- Cart items (each cart item has unique UUID)
+
+**Format**: Long string of letters and numbers, like: `a3d4c5e6-7890-1234-5678-90abcdef1234`
+
+**Example**: Your order might have UUID `123e4567-e89b-12d3-a456-426614174000`, which will never be assigned to any other order in the system.
+
+---
+
+## W
+
+### Webhook
+
+**Simple Definition**: A way for one system to automatically send information to another system when something happens, like a notification.
+
+**Real-World Analogy**: Like a doorbell—when someone presses it (an event happens), it automatically rings inside your house (triggers an action).
+
+**In ShopHub**: n8n creates webhooks that the frontend calls:
+- Frontend: "Add this product to cart" → Webhook receives request
+- n8n: Processes request → Updates database → Sends response
+- Frontend: Shows confirmation message
+
+**How They Work**: Each webhook has a unique URL. When the frontend sends data to that URL, the corresponding workflow runs.
+
+**Example**: When you click "Place Order," the frontend sends order data to the `place_order` webhook URL, which triggers the order processing workflow in n8n.
+
+---
+
+### Workflow
+
+**Simple Definition**: A series of automated steps that accomplish a task, like a recipe or instruction manual.
+
+**Real-World Analogy**: Like a recipe with steps—"Preheat oven, mix ingredients, pour into pan, bake for 30 minutes." Each step happens in order to achieve the final result.
+
+**In ShopHub**: n8n workflows handle all backend operations:
+- **Get Products Workflow**: Fetches products from database, formats them, returns to frontend
+- **Place Order Workflow**: Validates cart → Creates order → Updates inventory → Clears cart → Sends email
+- **Chatbot Workflow**: Receives message → Classifies intent → Routes to appropriate agent → Generates response
+
+**Visual Representation**: In n8n, workflows look like flowcharts with boxes (nodes) and arrows showing how data moves through each step.
+
+**Example**: The "Add to Cart" workflow:
+1. Receive product ID and user ID from frontend
+2. Check if product exists in database
+3. Check if product is in stock
+4. Add item to cart table (or update quantity if already exists)
+5. Return success message to frontend
+
+---
+
+## Common Phrases Explained
+
+### "The frontend calls the backend"
+**Meaning**: The website (frontend) sends a request to n8n (backend) asking it to do something.
+**Example**: You click "Add to Cart," the frontend calls the backend to add the item.
+
+---
+
+### "Deploy to production"
+**Meaning**: Make the website or changes available to real customers (not just testing).
+**Example**: After fixing a bug, the developer deploys to production so customers see the fix.
+
+---
+
+### "Executing a workflow"
+**Meaning**: Running all the steps in a workflow from start to finish.
+**Example**: When you place an order, n8n executes the "Place Order" workflow.
+
+---
+
+### "Query the database"
+**Meaning**: Ask the database a question to retrieve specific information.
+**Example**: "Show me all products in the Clothing category" is a database query.
+
+---
+
+### "Session expired"
+**Meaning**: Your logged-in status has timed out, usually from inactivity, requiring you to log in again.
+**Example**: You logged in yesterday, come back today, and see "Session expired—please log in again."
+
+---
+
+### "Webhook triggered"
+**Meaning**: An action occurred that caused a webhook to activate and run its workflow.
+**Example**: Clicking "Add to Cart" triggers the add_to_cart webhook.
+
+---
+
+## Understanding ShopHub's Architecture in Simple Terms
+
+**The Big Picture**:
+
+Think of ShopHub like a restaurant:
+
+- **Frontend (Website)**: The dining room where customers see the menu (products), place orders, and interact with staff.
+
+- **Backend (n8n Workflows)**: The kitchen where orders are prepared, recipes (workflows) are followed, and food is coordinated.
+
+- **Database (Supabase)**: The pantry and filing cabinet where ingredients (products) are stored and records (orders, customers) are kept.
+
+- **AI Chatbot**: A knowledgeable waiter who can answer questions, take orders, and help customers navigate the menu.
+
+**How They Work Together**:
+
+1. You (customer) look at the menu (frontend shows products from database)
+2. You tell the waiter (chatbot) what you want, or click "Add to Cart" (frontend sends request to backend)
+3. The kitchen (n8n workflow) checks the pantry (database) to ensure ingredients (products) are available
+4. The kitchen prepares your order (workflow processes your request)
+5. The kitchen updates the pantry inventory (database reflects changes)
+6. Your order is delivered (frontend shows confirmation)
+
+**Key Principle**: The dining room (frontend) never goes directly to the pantry (database). Everything goes through the kitchen (backend workflows) to ensure proper procedures are followed.
+
+---
+
+## Still Have Questions?
+
+If you encounter a term not listed here or need further clarification:
+
+- **For Business Users**: Contact your technical team or ShopHub administrator
+- **For Developers**: Refer to the technical documentation sections
+- **General Questions**: Most terms can be understood by seeing them in context—keep reading and they'll become clearer
+
+Remember: You don't need to understand every technical term to use or benefit from ShopHub. This glossary is here to help demystify concepts when you're curious, but the system is designed to work smoothly whether you understand the underlying technology or not.
+
+---
+
+**End of Glossary**
+
+*This glossary is designed for non-technical readers. For technical definitions and implementation details, refer to the respective technical documentation sections (Frontend, Backend, Database, Chatbot Architecture).*
