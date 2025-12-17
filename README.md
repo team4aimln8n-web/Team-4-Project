@@ -1,17 +1,18 @@
 # 📑 Table of Contents
 
 1. [Executive Summary](#Executive-Summary )
-2. [System Architecture](#system-architecture)
-3. [Sequence Diagrams](#sequence-diagrams)
-4. [Environment Variables](#environment-variables)
-5. [API Endpoints](#api-endpoints)
-6. [Folder Structure](#folder-structure)
-7. [Workflow Overview](#workflow-overview)
-8. [Node-Level Documentation](#node-level-documentation)
-9. [Setup Instructions](#setup-instructions)
-10. [Deployment Guide](#deployment-guide)
-11. [Scalability & Limitations](#scalability--limitations)
-12. [Future Improvements](#future-improvements)
+2. [System Overview & Architecture](#System-Overview-&-Architecture)
+3. [User Roles & Journeys](#User-Roles-&-Journeys)
+4. [Frontend Documentation](#Frontend-Documentation)
+5. [Backend Architecture (n8n)](#Backend-Architecture-(n8n))
+6. [Database Design](#Database-Design)
+7. [AI Chatbot Architecture & Safety](#AI-Chatbot-Architecture-&-Safety)
+8. [Deployment & Hosting](#Deployment-&-Hosting)
+9. [Customization & Scalability](#Customization-&-Scalability)
+10. [Known Limitations](#Known-Limitations)
+11. [Future Enhancements](#Future-Enhancements)
+12. [Glossary for Non-Technical Readers](#Glossary-for-Non-Technical-Readers)
+13. [Final Notes](#Final-Notes)
 
 ---
 
