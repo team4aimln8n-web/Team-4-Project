@@ -1,8 +1,8 @@
 # 📑 Table of Contents
 
 1. [Executive Summary](#Executive-Summary )
-2. [System Overview & Architecture](#System-Overview-&-Architecture)
-3. [User Roles & Journeys](#User-Roles-&-Journeys)
+2. [System Overview & Architecture](#System-Overview-And-Architecture)
+3. [User Roles & Journeys](#User-Roles-And-Journeys)
 4. [Frontend Documentation](#Frontend-Documentation)
 5. [Backend Architecture (n8n)](#Backend-Architecture-(n8n))
 6. [Database Design](#Database-Design)
@@ -82,7 +82,7 @@ This system is particularly well-suited for:
 
 This AI-powered e-commerce platform delivers tangible business value by automating customer interactions and operational workflows while maintaining security and reliability. It enables businesses to provide superior customer service at scale, reduce operational overhead, and gather actionable insights—all while focusing resources on growth rather than infrastructure management.
 
-# System Overview & Architecture
+# System Overview And Architecture
 
 ## Overview for Business Stakeholders
 
@@ -361,7 +361,7 @@ Webhook endpoints validate request origins, auth tokens, and input data before p
 **AI Safety:**  
 Guardrails prevent jailbreak attempts and filter inappropriate content before responses reach users.
 
-# User Roles & Journeys
+# User Roles And Journeys
 
 ## Overview
 
