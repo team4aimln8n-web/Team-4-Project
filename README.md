@@ -342,3 +342,232 @@ Webhook endpoints validate request origins, auth tokens, and input data before p
 
 **AI Safety:**  
 Guardrails prevent jailbreak attempts and filter inappropriate content before responses reach users.
+
+# User Roles & Journeys
+
+## Overview
+
+This e-commerce system serves two distinct types of users, each with their own set of capabilities and responsibilities. Customers use the system to browse, purchase, and track products, while administrators manage the store's inventory, fulfill orders, and monitor customer satisfaction.
+
+---
+
+## Customer Role
+
+Customers are shoppers who visit the website to discover products, make purchases, and manage their orders. The system provides a guided experience from first visit through post-purchase feedback.
+
+### The Customer Journey
+
+#### 1. Arriving at the Store
+
+When a customer first visits the website, they see the homepage displaying the available products. The site is accessible from any web browser on desktop or mobile devices. No installation or setup is required—customers simply visit the web address to begin shopping.
+
+#### 2. Creating an Account or Logging In
+
+**First-Time Visitors (Registration)**
+
+New customers create an account by providing basic information such as their email address and choosing a password. This account allows them to save items in their cart, place orders, and track their purchase history. The registration process is quick and straightforward.
+
+**Returning Customers (Login)**
+
+Customers who already have an account simply log in using their email and password. Once logged in, they can access their previous cart items and view their order history, creating a personalized shopping experience.
+
+#### 3. Exploring Products
+
+After logging in, customers can browse through the product catalog. Products are displayed with images, names, and prices, making it easy to scan available options. Customers can click on any product that catches their interest to learn more about it.
+
+#### 4. Viewing Product Details
+
+When a customer selects a product, they see detailed information including a larger product image, full description, specifications, and pricing. This detailed view helps customers make informed purchase decisions before adding items to their cart.
+
+#### 5. Adding Products to the Cart
+
+If a customer decides they want to purchase a product, they add it to their shopping cart. Customers can add multiple products to their cart, building up their order one item at a time. The cart keeps track of all selected items as the customer continues browsing.
+
+#### 6. Managing the Shopping Cart
+
+Customers can view their cart at any time to see what they've selected. In the cart view, they can:
+
+- See all items they've added
+- Review quantities and prices
+- Update quantities if they want more or fewer of an item
+- Remove items they've decided not to purchase
+- See the total cost of their order
+
+This gives customers full control over their purchase before committing to buy.
+
+#### 7. Proceeding to Checkout
+
+When customers are satisfied with their cart contents, they proceed to checkout. This is where they finalize their purchase details and prepare to place the order.
+
+#### 8. Placing the Order
+
+During checkout, customers confirm their order and submit it for processing. Once submitted, the order is recorded in the system and the customer receives confirmation that their purchase has been received.
+
+#### 9. Viewing Order Confirmation
+
+Immediately after placing an order, customers see a confirmation page showing:
+
+- Order number for reference
+- Items purchased
+- Total amount
+- Order status
+- Estimated delivery or processing information
+
+This confirmation provides peace of mind that the order was successfully placed.
+
+#### 10. Checking Order History
+
+Customers can return to the website anytime to check on their orders. The order history section shows:
+
+- All previous orders
+- Current status of each order (pending, delivered, cancelled)
+- Order details when clicked
+
+This allows customers to track their purchases and monitor delivery progress without needing to contact support.
+
+#### 11. Receiving Feedback Requests
+
+After an order is completed or cancelled, customers receive an email inviting them to share their experience. This feedback request includes a secure link to a feedback form. The timing of this email ensures customers have had enough experience with the product or service to provide meaningful input.
+
+#### 12. Submitting Feedback
+
+Customers who wish to share their thoughts click the link in the feedback email, which takes them to a secure feedback page. Here they can:
+
+- Rate their experience
+- Share comments about the product or service
+- Provide suggestions for improvement
+- Report any issues they encountered
+
+This feedback is submitted securely and helps the business understand customer satisfaction and identify areas for improvement.
+
+### Customer Interaction with the AI Chatbot
+
+Throughout their shopping journey, customers have access to an intelligent assistant through a chat interface. Customers can type questions or requests, and the assistant helps them:
+
+**Product Inquiries**
+- "Tell me about the blue running shoes"
+- "What products do you have under $50?"
+- "Show me products in the electronics category"
+
+**Cart Management**
+- "Add the wireless headphones to my cart"
+- "What's in my cart right now?"
+- "Remove the red jacket from my cart"
+
+**Order Information**
+- "Where is my order #12345?"
+- "Show me my recent orders"
+- "What's the status of my last order?"
+
+**Feedback**
+- "I want to leave feedback about my recent purchase"
+- "I had a great experience with product X"
+
+The assistant understands natural language, so customers can communicate conversationally rather than learning specific commands. It responds intelligently based on what the customer needs, routing questions to the appropriate system capabilities and providing helpful, accurate information.
+
+---
+
+## Administrator Role
+
+Administrators are staff members responsible for managing the store's operations. They handle inventory, process orders, and ensure customers receive excellent service.
+
+### The Administrator Journey
+
+#### 1. Accessing the Admin Interface
+
+Administrators log into a dedicated admin interface using their administrative credentials. This interface is separate from the customer-facing store and provides access to management tools and business data.
+
+#### 2. Adding New Products
+
+To grow the inventory, administrators add new products to the catalog. This process includes:
+
+- Uploading product images
+- Entering product names and descriptions
+- Setting prices
+- Adding any relevant specifications or details
+- Publishing the product to make it visible to customers
+
+Once added, these products immediately appear in the customer-facing store for shoppers to discover and purchase.
+
+#### 3. Viewing Customer Orders
+
+Administrators have access to a complete list of all customer orders. This order management view shows:
+
+- Order numbers
+- Customer information
+- Order dates
+- Current status
+- Total amounts
+
+This centralized view allows administrators to quickly see all business activity and identify orders that need attention.
+
+#### 4. Reviewing Order Details
+
+When an administrator needs more information about a specific order, they can open the full order details. This detailed view displays:
+
+- Complete list of items in the order
+- Customer contact information
+- Order timestamps
+- Payment details
+- Current processing status
+- Delivery information
+
+Having access to complete order details enables administrators to answer customer questions, resolve issues, and manage fulfillment efficiently.
+
+#### 5. Updating Order Status
+
+As orders progress through fulfillment, administrators update the order status to reflect current progress. Common status updates include:
+
+- **Pending**: Order received and awaiting processing
+- **Delivered**: Order successfully completed and delivered to customer
+- **Cancelled**: Order cancelled at customer request or due to fulfillment issues
+
+These status updates keep the system current and ensure customers see accurate information when checking their orders.
+
+#### 6. Sending Automated Emails
+
+When administrators update order statuses, the system can automatically trigger emails to customers. For example:
+
+- Changing status to "Delivered" triggers a delivery confirmation email
+- Changing status to "Cancelled" triggers a cancellation notification email
+- Completing or cancelling orders triggers feedback request emails
+
+This automation ensures customers stay informed about their orders without requiring administrators to manually compose each message.
+
+#### 7. Reviewing Customer Feedback
+
+Administrators can access and review all feedback submitted by customers. This feedback helps the business:
+
+- Measure customer satisfaction
+- Identify popular products
+- Discover areas needing improvement
+- Address specific customer concerns
+- Make data-driven decisions about inventory and service
+
+By regularly reviewing feedback, administrators gain valuable insights into customer experiences and can continuously improve the store's offerings and operations.
+
+---
+
+## Role Comparison
+
+### Customer Capabilities
+- Browse and purchase products
+- Manage personal cart and orders
+- Track order status
+- Provide feedback
+- Interact with AI assistant for help
+
+### Administrator Capabilities
+- Manage product catalog
+- Process and fulfill orders
+- Update order statuses
+- Trigger customer communications
+- Review business performance through feedback
+
+### What Makes Each Role Secure
+
+**Customers** can only see and manage their own information. They cannot access other customers' orders or administrative functions.
+
+**Administrators** have elevated access to manage the store but cannot impersonate customers or access sensitive payment information beyond what's necessary for order processing.
+
+This clear separation ensures that each user type has exactly the access they need to accomplish their tasks—nothing more, nothing less.
