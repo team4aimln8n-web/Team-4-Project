@@ -10,7 +10,7 @@
 8. [Deployment & Hosting](#Deployment-And-Hosting)
 9. [Customization & Scalability](#Customization-And-Scalability)
 10. [Known Limitations](#Known-Limitations)
-11. [Future Enhancements](#Future-Enhancements)
+11. [Future Enhancements](#Future-Enhancements-For-This-Project)
 12. [Glossary for Non-Technical Readers](#Glossary-for-Non-Technical-Readers)
 13. [Final Notes](#Final-Notes)
 
@@ -7226,7 +7226,7 @@ ShopHub is designed as a **growth platform**, not a permanent constraint. Start 
 
 ---
 
-# Future Enhancements
+# Future Enhancements For This Project
 
 ## Overview
 
