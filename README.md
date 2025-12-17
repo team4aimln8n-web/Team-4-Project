@@ -8518,3 +8518,8 @@ Remember: You don't need to understand every technical term to use or benefit fr
 **End of Glossary**
 
 *This glossary is designed for non-technical readers. For technical definitions and implementation details, refer to the respective technical documentation sections (Frontend, Backend, Database, Chatbot Architecture).*
+
+---
+
+# Final Notes
+This project demonstrates how AI powered systems can help people with daily repititive tasks in ways that are both efficient and fruitful. I am thankful to my instructor **Mr. Zafar Iqbal** for giving me this opportunity that truly shaped my learning arc. Also, I am thankful to my lovely wife **Sawera Rukhsar** and my elder brother **Farooq Hassnain** for being so supportive during those irritable debugging sessions. 
