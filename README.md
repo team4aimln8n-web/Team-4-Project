@@ -2348,3 +2348,1127 @@ The separation of concerns between frontend (presentation) and backend (n8n work
 While the framework-free approach has trade-offs (more verbose code, manual state management), the benefits in this context—especially simplicity and ease of deployment—outweigh the limitations for a store of this scale.
 
 ---
+
+# Backend Architecture (n8n)
+
+## Overview
+
+The ShopHub backend is entirely implemented using n8n, a workflow automation platform that replaces traditional backend servers, application code, and API frameworks. Instead of writing Express.js routes, Django views, or similar backend code, all business logic, data validation, API endpoints, and system integrations are defined as visual workflows in n8n.
+
+### Why n8n as Backend?
+
+**No Code/Low-Code Approach**:
+- Eliminates need for traditional backend development
+- Business logic expressed as visual flowcharts instead of code
+- Reduces development time and complexity
+- Non-developers can understand and modify workflows
+
+**Built-in API Capabilities**:
+- Webhook nodes create instant HTTP endpoints
+- Automatic request parsing and response formatting
+- No need for Express, Flask, or similar frameworks
+- Native support for REST API patterns
+
+**Native Integrations**:
+- Direct connection to Supabase (PostgreSQL + Auth)
+- OpenAI integration for AI chatbot
+- Email service integration (Gmail, SendGrid, etc.)
+- 400+ pre-built integrations available
+
+**Workflow-Based Architecture**:
+- Each business process is an independent workflow
+- Workflows can call other workflows (modular design)
+- Easy to test, debug, and monitor individual operations
+- Visual execution logs show exact data flow
+
+**Scalability**:
+- Workflows run independently and can scale horizontally
+- Asynchronous execution prevents blocking
+- Can handle concurrent requests efficiently
+- Self-hosted or cloud-hosted options
+
+**Rapid Iteration**:
+- Changes deployed instantly (no build process)
+- Test workflows with built-in execution panel
+- Roll back changes by reverting workflow versions
+- A/B test different logic implementations
+
+**Cost Efficiency**:
+- Single platform replaces multiple backend services
+- No separate hosting for API server
+- Unified monitoring and logging
+- Open-source core with self-hosting option
+
+---
+
+## Architecture Principles
+
+### Separation of Concerns
+
+Each workflow group handles a distinct domain:
+- **Product Management**: Catalog operations
+- **Cart Management**: Shopping cart state
+- **Order Management**: Order lifecycle
+- **Admin Operations**: Administrative tasks
+- **Email & Feedback**: Communication and feedback collection
+- **AI Chatbot**: Customer assistance (separate detailed section)
+
+### Webhook-Driven Design
+
+Every workflow that the frontend interacts with starts with a **Webhook Trigger**:
+- Each webhook provides a unique URL endpoint
+- Frontend sends HTTP requests (GET/POST) to these URLs
+- Webhook receives request body and query parameters
+- Workflow processes the request and returns JSON response
+
+**Example Flow**:
+```
+Frontend: POST /webhook/add_to_cart
+  ↓
+n8n: Webhook node receives {user_id, product_id, quantity}
+  ↓
+n8n: Validate user and product exist
+  ↓
+n8n: Check product stock availability
+  ↓
+n8n: Insert cart item into Supabase
+  ↓
+n8n: Return {success: true, cart_item_id: "xyz"}
+  ↓
+Frontend: Display success message and update cart badge
+```
+
+### Data Validation Strategy
+
+All validation occurs in n8n workflows, never trusting frontend data:
+- **User Authentication**: Verify user ID exists in Supabase
+- **Product Availability**: Check stock before adding to cart
+- **Order Integrity**: Verify cart items still exist and are in stock
+- **Admin Authorization**: Validate admin credentials before operations
+- **Input Sanitization**: Clean and validate all user input
+- **Business Rules**: Enforce minimum quantities, pricing rules, etc.
+
+### Database Interaction Pattern
+
+Frontend **never** queries Supabase directly. All database operations flow through n8n:
+
+```
+Frontend Request
+  ↓
+n8n Webhook (receives request)
+  ↓
+n8n Validation (check permissions, data integrity)
+  ↓
+Supabase Node (execute database query using Service Role Key)
+  ↓
+n8n Processing (transform data, apply business logic)
+  ↓
+n8n Response (format and return JSON to frontend)
+  ↓
+Frontend Update (render data to user)
+```
+
+**Why This Pattern?**:
+- **Security**: Service Role Key never exposed to frontend
+- **Business Logic**: Complex operations centralized in workflows
+- **Data Integrity**: Validation and constraints enforced consistently
+- **Auditing**: All database operations logged in n8n execution history
+- **Flexibility**: Change database operations without frontend changes
+
+---
+
+## Workflow Categories
+
+### 1. Product Management Workflows
+
+**Purpose**: Manage the product catalog that powers the storefront.
+
+**Core Workflows**:
+
+**Get Products** (`GET_PRODUCTS`):
+- **Trigger**: Webhook receives GET request
+- **Process**: Query Supabase for all active products
+- **Data Fetched**: Product details, pricing, stock, categories
+- **Image Handling**: Retrieves associated product images (URLs)
+- **Filtering**: Can filter by category, availability, price range
+- **Response**: Returns array of product objects with images
+- **Usage**: Homepage featured products, products page listing
+
+**Get Product Details** (`GET_PRODUCT_DETAILS`):
+- **Trigger**: Webhook receives GET request with product ID
+- **Process**: Query specific product from Supabase
+- **Data Fetched**: Full product information, all images, stock status
+- **Validation**: Checks if product exists and is active
+- **Response**: Returns detailed product object or error
+- **Usage**: Product details page, cart validation
+
+**Admin Add Product** (`ADMIN_ADD_PRODUCT`):
+- **Trigger**: Webhook receives POST request from admin panel
+- **Authentication**: Validates admin token (password check)
+- **Authorization**: Confirms user has admin privileges
+- **Process**:
+  1. Validates product data (name, price, description, stock)
+  2. Inserts new product record into Supabase
+  3. Inserts product images (up to 5 URLs) linked to product
+  4. Sets first image as primary display image
+- **Validation**: Ensures required fields present, price > 0, stock >= 0
+- **Response**: Returns success status and new product ID
+- **Usage**: Admin panel for adding inventory
+
+**Data Flow Example** (Get Products):
+```
+Frontend loads products.html
+  ↓
+JavaScript calls GET_PRODUCTS webhook
+  ↓
+n8n: Webhook receives request
+  ↓
+n8n: Supabase node queries "products" table
+  ↓
+n8n: Supabase node queries "product_images" table
+  ↓
+n8n: Merges product data with image URLs
+  ↓
+n8n: Filters out out-of-stock items (if requested)
+  ↓
+n8n: Returns JSON array of products
+  ↓
+Frontend: Renders product cards to page
+```
+
+---
+
+### 2. Cart Management Workflows
+
+**Purpose**: Maintain shopping cart state for authenticated users across sessions.
+
+**Core Workflows**:
+
+**Add to Cart** (`ADD_TO_CART`):
+- **Trigger**: Webhook receives POST request with user_id, product_id, quantity
+- **Authentication**: Verifies user is logged in
+- **Validation**:
+  1. Checks product exists and is active
+  2. Verifies sufficient stock available
+  3. Checks if item already in cart
+- **Process**:
+  - If item exists in cart: Update quantity (add to existing)
+  - If new item: Insert new cart_items record
+- **Stock Consideration**: Does not reserve stock (handled at checkout)
+- **Response**: Returns success status and cart_item_id
+- **Usage**: Product pages, product details page "Add to Cart" button
+
+**View Cart** (`VIEW_CART`):
+- **Trigger**: Webhook receives GET request with user_id
+- **Authentication**: Verifies user is logged in
+- **Process**:
+  1. Query cart_items for this user
+  2. Join with products table to get current product details
+  3. Join with product_images to get primary image
+  4. Calculate subtotals for each item
+- **Real-time Data**: Always fetches current price and stock (handles price changes)
+- **Response**: Returns array of cart items with product details
+- **Usage**: Cart page, checkout page, cart badge count
+
+**Update Cart Item** (`UPDATE_CART_ITEM`):
+- **Trigger**: Webhook receives POST request with cart_item_id, new_quantity
+- **Validation**:
+  1. Verifies cart item belongs to requesting user
+  2. Checks product still available
+  3. Validates new quantity against stock
+- **Process**: Updates quantity in cart_items table
+- **Edge Cases**: If quantity = 0, removes item instead
+- **Response**: Returns updated cart item details
+- **Usage**: Cart page quantity controls
+
+**Remove from Cart** (`REMOVE_FROM_CART`):
+- **Trigger**: Webhook receives POST request with cart_item_id
+- **Validation**: Verifies cart item belongs to requesting user
+- **Process**: Deletes cart_items record from Supabase
+- **Response**: Returns success confirmation
+- **Usage**: Cart page "Remove" button
+
+**Data Flow Example** (Add to Cart):
+```
+User clicks "Add to Cart" on product
+  ↓
+Frontend: POST to ADD_TO_CART with {user_id, product_id, quantity: 1}
+  ↓
+n8n: Validate user exists (query auth.users)
+  ↓
+n8n: Check product exists and in stock
+  ↓
+n8n: Check if product already in user's cart
+  ↓
+n8n: If exists → UPDATE quantity
+      If new → INSERT new cart_items record
+  ↓
+n8n: Return {success: true, cart_item_id}
+  ↓
+Frontend: Animate button, show toast, update cart badge
+```
+
+**Cart Persistence**:
+- Cart stored in database, not browser localStorage
+- Persists across devices and sessions
+- Survives browser clear/logout
+- Cleared only on order placement or manual removal
+
+---
+
+### 3. Order Management Workflows
+
+**Purpose**: Convert carts to orders, track order lifecycle, and provide order history.
+
+**Core Workflows**:
+
+**Place Order** (`PLACE_ORDER`):
+- **Trigger**: Webhook receives POST request from checkout form
+- **Data Received**: user_id, shipping address, phone, payment method, notes
+- **Complex Multi-Step Process**:
+  
+  **Step 1 - Cart Validation**:
+  - Fetch current cart items for user
+  - Verify cart is not empty
+  - Check each product still exists and is active
+  - Verify sufficient stock for all items
+  
+  **Step 2 - Order Creation**:
+  - Calculate total amount from current cart prices
+  - Generate unique order number (e.g., ORD-20241218-001)
+  - Insert order record into "orders" table
+  - Store shipping address as JSONB object
+  - Set initial status as "pending"
+  
+  **Step 3 - Order Items Creation**:
+  - For each cart item:
+    - Insert into "order_items" table
+    - Link to order_id
+    - Capture current product name and price (price_at_purchase)
+    - Store quantity
+  - Preserves pricing at time of purchase (not affected by future price changes)
+  
+  **Step 4 - Stock Management**:
+  - For each ordered product:
+    - Decrement stock_quantity in products table
+    - Use atomic update to prevent overselling
+  
+  **Step 5 - Cart Cleanup**:
+  - Delete all cart_items for this user
+  - Fresh cart for next shopping session
+  
+  **Step 6 - Response**:
+  - Return order details (order_id, order_number, total)
+  - Frontend redirects to order confirmation page
+
+- **Transaction Safety**: Uses database transactions to ensure atomicity
+- **Failure Handling**: If any step fails, entire order is rolled back
+- **Response**: Returns complete order details or error message
+- **Usage**: Checkout page form submission
+
+**Get User Orders** (`GET_USER_ORDERS`):
+- **Trigger**: Webhook receives GET request with user_id
+- **Authentication**: Verifies user is logged in
+- **Process**:
+  1. Query orders table for this user
+  2. Join with order_items to get item count
+  3. Sort by created_at (newest first)
+- **Data Returned**: Order number, status, total, date, item count
+- **Filtering**: Can filter by status (pending, shipped, delivered, etc.)
+- **Response**: Returns array of user's orders
+- **Usage**: Orders page (My Orders)
+
+**Get Order Details** (`GET_ORDER_DETAILS`):
+- **Trigger**: Webhook receives GET request with order_id
+- **Authorization**: Verifies order belongs to requesting user (security)
+- **Process**:
+  1. Fetch order record with full details
+  2. Fetch all order_items linked to this order
+  3. Include product names, quantities, prices at purchase
+  4. Parse shipping address from JSONB
+- **Response**: Returns complete order object with items array
+- **Usage**: Order details page, order confirmation page
+
+**Update Order Status** (`UPDATE_ORDER_STATUS`) [Admin Only]:
+- **Trigger**: Webhook receives POST request with order_id, new_status
+- **Authentication**: Validates admin token
+- **Authorization**: Confirms admin privileges
+- **Process**:
+  1. Validates new status is valid (pending/confirmed/processing/shipped/delivered/cancelled)
+  2. Updates order status in database
+  3. Logs status change timestamp
+  4. Optionally stores admin notes
+- **Side Effects**: May trigger email notification (separate workflow)
+- **Response**: Returns updated order details
+- **Usage**: Admin order management panel
+
+**Data Flow Example** (Place Order):
+```
+User submits checkout form
+  ↓
+Frontend: Validates form fields client-side
+  ↓
+Frontend: POST to PLACE_ORDER with complete order data
+  ↓
+n8n: Webhook receives request
+  ↓
+n8n: BEGIN TRANSACTION
+  ↓
+n8n: Fetch and validate cart items
+  ↓
+n8n: Check stock for all items
+  ↓
+n8n: Calculate order total
+  ↓
+n8n: Generate order number
+  ↓
+n8n: INSERT into orders table
+  ↓
+n8n: INSERT multiple records into order_items table
+  ↓
+n8n: UPDATE products stock_quantity (decrement)
+  ↓
+n8n: DELETE cart_items for this user
+  ↓
+n8n: COMMIT TRANSACTION
+  ↓
+n8n: Return order details with order_id and order_number
+  ↓
+Frontend: Redirect to order-confirmation.html?order_id=xyz&order_number=ORD-123
+  ↓
+Frontend: Display order success message and details
+```
+
+**Order Status Lifecycle**:
+```
+pending (initial state - payment awaiting)
+  ↓
+confirmed (admin verifies/accepts order)
+  ↓
+processing (order being prepared)
+  ↓
+shipped (order dispatched to customer)
+  ↓
+delivered (order received by customer)
+
+Alternative path:
+cancelled (order cancelled by admin or customer)
+```
+
+---
+
+### 4. Admin Operations Workflows
+
+**Purpose**: Provide administrative capabilities for managing orders and inventory.
+
+**Core Workflows**:
+
+**Get All Orders** (`GET_ALL_ORDERS`) [Admin Only]:
+- **Trigger**: Webhook receives GET request
+- **Authentication**: Validates admin token
+- **Authorization**: Confirms admin email in whitelist
+- **Process**:
+  1. Query all orders (not filtered by user)
+  2. Join with order_items to get item count
+  3. Join with auth.users to get customer email
+  4. Sort by date (configurable)
+- **Filtering Options**:
+  - By status (pending, confirmed, shipped, etc.)
+  - By date range
+  - By customer email
+- **Response**: Returns array of all orders with customer details
+- **Usage**: Admin orders page, order management dashboard
+
+**Admin Update Order Status** (`ADMIN_UPDATE_ORDER_STATUS`):
+- **Trigger**: Webhook receives POST request from admin panel
+- **Data Received**: admin_token, order_id, new_status, optional admin_notes
+- **Authentication**: Validates admin credentials
+- **Validation**:
+  1. Verifies admin token matches configured password
+  2. Checks order exists
+  3. Validates new status is valid enum value
+  4. Prevents invalid status transitions (e.g., delivered → pending)
+- **Process**:
+  1. Updates order status in database
+  2. Records admin_notes if provided
+  3. Logs timestamp of status change
+  4. Updates updated_at timestamp
+- **Side Effects**:
+  - Triggers email notification to customer (via separate workflow)
+  - May trigger SMS notification (if configured)
+- **Response**: Returns updated order details
+- **Usage**: Admin order update page
+
+**Admin Add Product** (covered in Product Management):
+- Creates new products in catalog
+- Restricted to admin users only
+- Validates all product data before insertion
+
+**Data Flow Example** (Admin Updates Order):
+```
+Admin views order in admin panel
+  ↓
+Admin clicks "Update Status" → Selects "Shipped"
+  ↓
+Frontend: POST to ADMIN_UPDATE_ORDER_STATUS
+  Body: {admin_token, order_id, new_status: "shipped", admin_notes: "Shipped via FedEx"}
+  ↓
+n8n: Validate admin_token matches configured password
+  ↓
+n8n: Validate order exists in database
+  ↓
+n8n: UPDATE orders SET status='shipped', admin_notes='...', updated_at=NOW()
+  ↓
+n8n: Call "Send Order Status Email" workflow (async)
+  ↓
+n8n: Return {success: true, updated_order}
+  ↓
+Frontend: Show success message
+  ↓
+Frontend: Refresh order list
+  ↓
+[Separately] Email workflow sends "Order Shipped" notification to customer
+```
+
+**Admin Authentication**:
+- **Two-Layer Security**:
+  1. Must be logged in via Supabase (user authentication)
+  2. Email must be in ADMIN_EMAILS whitelist (role authorization)
+  3. Admin operations require admin_token (password verification)
+- **Admin Token**:
+  - Separate from Supabase user password
+  - Configured in n8n workflow environment variables
+  - Validated on every admin action
+  - Can be rotated without affecting user accounts
+- **Why Separate Token?**:
+  - Adds extra security layer for sensitive operations
+  - Allows multiple admins to share admin token
+  - Can be changed quickly if compromised
+  - Logged separately in n8n execution history
+
+---
+
+### 5. Email & Feedback Workflows
+
+**Purpose**: Automate customer communication and collect feedback for continuous improvement.
+
+**Core Workflows**:
+
+**Send Order Status Email** (`SEND_ORDER_STATUS_EMAIL`):
+- **Trigger**: Called by other workflows (not directly via webhook)
+- **Invoked When**: Order status changes to specific states
+- **Trigger States**:
+  - Order confirmed
+  - Order shipped
+  - Order delivered
+  - Order cancelled
+- **Process**:
+  1. Receives order_id and new_status from calling workflow
+  2. Fetches complete order details from database
+  3. Fetches customer email from auth.users
+  4. Selects appropriate email template based on status
+  5. Populates template with order details (number, items, shipping info)
+  6. Sends email via Gmail/SendGrid node
+- **Email Content**:
+  - **Confirmed**: "Your order has been confirmed and will be processed soon"
+  - **Shipped**: "Your order is on the way! Track your shipment"
+  - **Delivered**: "Your order has been delivered. Please share feedback!"
+  - **Cancelled**: "Your order has been cancelled. Refund details..."
+- **Feedback Link**: Delivered and cancelled emails include secure feedback link
+- **Response**: Returns success/failure status to calling workflow
+- **Usage**: Automatic email notifications throughout order lifecycle
+
+**Generate Feedback Link** (Internal Sub-Workflow):
+- **Purpose**: Creates secure, unique feedback URLs
+- **Called By**: Send Order Status Email workflow
+- **Process**:
+  1. Generates secure token (UUID or hash)
+  2. Stores token in database linked to order_id
+  3. Sets expiration date (e.g., 30 days)
+  4. Constructs URL: `https://site.com/feedback.html?token=xyz`
+- **Security**: Token required to submit feedback, prevents spam
+- **Response**: Returns complete feedback URL
+- **Usage**: Embedded in order status emails
+
+**Get Feedback** (`GET_FEEDBACK`):
+- **Trigger**: Webhook receives POST request from feedback form
+- **Data Received**: feedback_type, rating, comment, suggestion, user_id, email
+- **Validation**:
+  1. Verifies user is authenticated (user_id exists)
+  2. Validates rating is 1-5
+  3. Ensures comment meets minimum length (10 characters)
+- **Process**:
+  1. Inserts feedback record into "feedback" table
+  2. Stores timestamp of submission
+  3. Links to user_id for future reference
+- **Optional**: Can link to specific order_id if feedback is order-specific
+- **Response**: Returns success confirmation
+- **Usage**: Feedback page form submission
+- **Analytics**: Feedback stored for admin review and product improvement
+
+**Data Flow Example** (Order Status Email):
+```
+Admin updates order status to "Shipped"
+  ↓
+ADMIN_UPDATE_ORDER_STATUS workflow completes
+  ↓
+n8n: Workflow calls SEND_ORDER_STATUS_EMAIL workflow
+  Passes: {order_id: "123", new_status: "shipped"}
+  ↓
+Email Workflow: Fetch order details from database
+  ↓
+Email Workflow: Fetch customer email address
+  ↓
+Email Workflow: Select "Order Shipped" email template
+  ↓
+Email Workflow: Populate template with:
+  - Order number
+  - Shipping address
+  - Estimated delivery date
+  - Tracking number (if available)
+  ↓
+Email Workflow: Send email via Gmail/SendGrid node
+  ↓
+Email Workflow: Return success status
+  ↓
+Original workflow continues
+```
+
+**Email Templates**:
+- **Plain Text & HTML**: Both versions sent for compatibility
+- **Personalization**: Customer name, order details, dynamic content
+- **Branding**: Logo, colors, consistent footer
+- **Actionable**: Buttons for "View Order", "Track Shipment", "Contact Support"
+- **Responsive**: Mobile-friendly email design
+
+**Feedback Collection Strategy**:
+- **Triggered**: Only after order completion or cancellation
+- **Timing**: Email sent automatically when status changes
+- **Incentive**: Can offer discount code for feedback (future enhancement)
+- **Analysis**: Feedback stored for trend analysis and improvement
+- **Loop Closure**: Admin can review and respond to feedback
+
+---
+
+## Integration Architecture
+
+### Supabase Integration
+
+**Authentication Flow**:
+```
+User registers/logs in on frontend
+  ↓
+Frontend: Calls Supabase Auth API directly (signUp/signIn)
+  ↓
+Supabase: Creates user in auth.users table
+  ↓
+Supabase: Returns session token to frontend
+  ↓
+Frontend: Stores token (managed by Supabase client)
+  ↓
+User makes request to n8n webhook
+  ↓
+Frontend: Includes user_id in request body
+  ↓
+n8n: Validates user_id exists in Supabase auth.users
+  ↓
+n8n: Performs authorized action
+```
+
+**Database Operations in n8n**:
+- **Supabase Node**: n8n has native Supabase integration
+- **Service Role Key**: Used for all database operations (bypasses RLS)
+- **Operations**:
+  - Insert (create records)
+  - Select (query records)
+  - Update (modify records)
+  - Delete (remove records)
+- **SQL Queries**: Can execute raw SQL for complex operations
+- **Transactions**: Supports atomic operations across multiple tables
+
+**Why Service Role Key?**:
+- **Full Database Access**: No Row Level Security restrictions
+- **Centralized Logic**: All business rules enforced in n8n
+- **Simplified Frontend**: Frontend doesn't need database knowledge
+- **Security**: Key never exposed to client
+- **Flexibility**: Can access any table, perform any operation
+
+---
+
+### Email Service Integration
+
+**Supported Email Providers**:
+- Gmail (OAuth2 authentication)
+- SendGrid (API key authentication)
+- SMTP (custom email servers)
+- Amazon SES
+- Mailgun
+
+**Email Node Configuration**:
+- **From Address**: Configured in workflow settings
+- **Templates**: HTML and plain text versions
+- **Attachments**: Can include receipts, invoices (future)
+- **Error Handling**: Retries on failure, logs errors
+
+**Email Delivery Tracking**:
+- n8n logs all email send attempts
+- Success/failure status recorded
+- Can integrate webhooks for open/click tracking (if provider supports)
+
+---
+
+### AI Integration (High-Level)
+
+The AI chatbot uses OpenAI's GPT models, integrated through n8n's OpenAI nodes:
+- **Agent Architecture**: Separate workflows for each agent type
+- **Tool Calling**: Agents call internal workflows via "Call n8n Workflow" nodes
+- **Context Management**: Session data passed between workflow calls
+- **Guardrails**: Content filtering and jailbreak prevention workflows
+- **Streaming**: Real-time response streaming to frontend (if implemented)
+
+*Detailed chatbot architecture covered in separate section.*
+
+---
+
+## Workflow Execution & Monitoring
+
+### Execution Logs
+
+**Built-in Logging**:
+- Every workflow execution is logged automatically
+- Logs include:
+  - Timestamp of execution
+  - Input data (request payload)
+  - Output data (response returned)
+  - Execution time (duration)
+  - Success/failure status
+  - Error messages (if any)
+- **Retention**: Configurable (e.g., 7 days, 30 days, unlimited)
+- **Search**: Can search logs by workflow, date, status
+- **Export**: Logs can be exported for analysis
+
+**Debugging**:
+- **Manual Test**: Execute workflows manually with test data
+- **Step-Through**: View data at each node in the workflow
+- **Error Handling**: See exactly where workflow failed
+- **Data Inspection**: View transformed data at each step
+
+**Monitoring Dashboard**:
+- View active workflows
+- See execution statistics (success rate, avg duration)
+- Identify failing workflows quickly
+- Set up alerts for critical failures
+
+---
+
+### Error Handling Strategy
+
+**Workflow-Level Error Handling**:
+- **Try-Catch Pattern**: Error trigger nodes catch exceptions
+- **Graceful Degradation**: Return error responses instead of crashing
+- **User-Friendly Messages**: Convert technical errors to readable messages
+- **Logging**: All errors logged for developer review
+
+**Example Error Handling** (Add to Cart):
+```
+User submits invalid product_id
+  ↓
+n8n: Supabase query for product returns no results
+  ↓
+n8n: Error trigger node catches "No product found"
+  ↓
+n8n: Return {success: false, message: "Product not found"}
+  ↓
+Frontend: Display error message to user
+  ↓
+Developer: Reviews n8n execution log to see invalid product_id
+```
+
+**Common Error Scenarios**:
+- **Database Errors**: Connection issues, query failures
+- **Validation Errors**: Invalid input data, missing required fields
+- **Business Logic Errors**: Insufficient stock, unauthorized access
+- **External Service Errors**: Email sending failures, API timeouts
+- **Authentication Errors**: Invalid user, expired session
+
+**Error Response Format**:
+All workflows return consistent error structure:
+```json
+{
+  "success": false,
+  "message": "Human-readable error message",
+  "error_code": "PRODUCT_NOT_FOUND",
+  "details": {} // Optional additional context
+}
+```
+
+---
+
+### Performance Optimization
+
+**Caching**:
+- **Product Data**: Can cache frequently accessed products
+- **User Data**: Session data cached during workflow execution
+- **Image URLs**: No processing needed, direct links returned
+- **Query Optimization**: Indexes on frequently queried columns
+
+**Async Operations**:
+- **Email Sending**: Doesn't block order confirmation response
+- **Status Updates**: Non-critical operations run asynchronously
+- **Logging**: Background logging doesn't affect response time
+
+**Concurrent Execution**:
+- Multiple workflows can run simultaneously
+- Each webhook request triggers independent execution
+- No shared state between executions (stateless)
+- Horizontal scaling possible with n8n instances
+
+**Database Connection Pooling**:
+- n8n maintains connection pool to Supabase
+- Reduces connection overhead
+- Improves query performance
+
+---
+
+## Deployment & Configuration
+
+### Environment Variables
+
+**Required Configuration**:
+- `SUPABASE_URL`: Supabase project URL
+- `SUPABASE_SERVICE_ROLE_KEY`: Database access key
+- `ADMIN_PASSWORD`: Admin token for protected operations
+- `OPENAI_API_KEY`: For chatbot functionality
+- `EMAIL_USER`: Email sending credentials (if Gmail)
+- `EMAIL_PASSWORD`: Email authentication
+
+**Webhook URLs**:
+- Automatically generated by n8n
+- Format: `https://n8n-instance.com/webhook/endpoint-name`
+- Must be configured in frontend `api.js`
+- Can use custom domain with reverse proxy
+
+### n8n Hosting Options
+
+**Self-Hosted**:
+- Deploy on own server (DigitalOcean, AWS, etc.)
+- Full control over infrastructure
+- Cost: Server costs only (~$5-20/month)
+- Scaling: Manual setup for load balancing
+
+**n8n Cloud**:
+- Official hosted solution
+- Managed infrastructure
+- Automatic updates and backups
+- Cost: Based on executions (~$20-50/month)
+- Scaling: Automatic
+
+**Docker Deployment**:
+- Container-based deployment
+- Easy to replicate environments
+- Version control for workflows
+- CI/CD integration possible
+
+### Workflow Version Control
+
+**Export/Import**:
+- Workflows can be exported as JSON files
+- Store in Git repository for version control
+- Import to restore previous versions
+- Share workflows across instances
+
+**Backup Strategy**:
+- Export critical workflows regularly
+- Store in secure location (S3, GitHub)
+- Test restore process periodically
+- Document workflow dependencies
+
+---
+
+## Security Considerations
+
+### API Security
+
+**Authentication Validation**:
+- Every workflow validates user_id before processing
+- Admin workflows require both auth and admin token
+- No operations allowed without valid authentication
+
+**Input Sanitization**:
+- All user input cleaned and validated
+- SQL injection prevention (parameterized queries)
+- XSS prevention (output escaping)
+- Rate limiting on webhooks (configurable)
+
+**Authorization Checks**:
+- Users can only access their own data (orders, cart)
+- Admin operations require role verification
+- Order details accessible only to order owner or admin
+
+**Secure Configuration**:
+- Environment variables for sensitive data
+- No hardcoded credentials
+- Secrets encrypted at rest
+- HTTPS enforced for all webhook endpoints
+
+### Data Privacy
+
+**Minimal Data Collection**:
+- Only necessary data stored
+- User passwords managed by Supabase (never in n8n)
+- Payment data not stored (COD only currently)
+- Feedback anonymous option available
+
+**Data Access Control**:
+- Service Role Key stored securely in n8n
+- Database credentials not in workflow definitions
+- Access logs maintained for audit
+- GDPR-compliant data handling possible
+
+---
+
+## Advantages of n8n Backend
+
+### For Developers
+
+**Rapid Development**:
+- Visual workflow editor speeds up implementation
+- No boilerplate code needed
+- Built-in integrations reduce custom code
+- Test workflows instantly
+
+**Easy Debugging**:
+- Visual execution logs show data flow
+- Step-by-step inspection of data transformations
+- Error messages pinpoint exact failure location
+- No need for debugger setup
+
+**Maintainable Code**:
+- Business logic visible at a glance
+- No code archaeology in multiple files
+- Changes deployed instantly
+- Documentation built into workflow structure
+
+**Flexible Architecture**:
+- Add new endpoints quickly (new webhook)
+- Modify existing logic without breaking frontend
+- A/B test different implementations
+- Gradual rollout of changes possible
+
+### For Non-Developers
+
+**Accessible**:
+- Visual interface understandable by non-programmers
+- Business logic clear and modifiable
+- No need to read code to understand flow
+- Can participate in workflow design discussions
+
+**Transparent**:
+- Execution logs show exactly what happened
+- Easy to audit business processes
+- Compliance verification straightforward
+- No "black box" backend code
+
+**Empowering**:
+- Business users can create automations
+- Marketing can modify email templates
+- Operations can adjust order workflows
+- IT team freed from routine changes
+
+---
+
+## Limitations & Trade-offs
+
+**Potential Challenges**:
+
+**Complexity at Scale**:
+- Many workflows can become difficult to organize
+- Workflow dependencies require careful documentation
+- Naming conventions critical for maintainability
+- Large workflows may become visually complex
+
+**Performance Ceiling**:
+- Not optimized for extreme high-traffic scenarios (>10,000 req/sec)
+- Complex workflows may have latency vs. custom code
+- Database query optimization limited to n8n nodes
+- May need traditional backend for very high scale
+
+**Vendor Dependency**:
+- Tied to n8n platform and ecosystem
+- Migration to traditional backend requires rewrite
+- n8n-specific knowledge needed for team
+- Updates may require workflow adjustments
+
+**Limited Advanced Features**:
+- Complex algorithms easier in code
+- Data processing intensive tasks may need external services
+- Real-time features (WebSockets) require workarounds
+- Advanced caching strategies limited
+
+**Appropriate Use Cases**:
+- Small to medium e-commerce stores (< 100,000 users)
+- CRUD-based applications
+- Business automation workflows
+- API integration projects
+- MVP and rapid prototyping
+- Internal tools and dashboards
+
+**When to Consider Traditional Backend**:
+- High-frequency trading or real-time systems
+- Complex data processing (ML, analytics)
+- Applications requiring WebSocket connections at scale
+- Strict latency requirements (<50ms response)
+- Very high traffic (>100,000 concurrent users)
+
+---
+
+## Workflow Best Practices
+
+### Design Principles
+
+**Single Responsibility**:
+- Each workflow handles one business process
+- Don't combine unrelated operations
+- Easier to test and debug
+- Modular and reusable
+
+**Idempotency**:
+- Workflows should be safe to retry
+- Duplicate requests don't cause duplicate actions
+- Use database constraints (unique keys) to enforce
+- Return same result for same input
+
+**Error Transparency**:
+- Always return meaningful error messages
+- Include context for debugging
+- Log errors for developer review
+- Never expose sensitive data in errors
+
+**Input Validation**:
+- Validate at workflow entry (webhook node)
+- Check data types, required fields, formats
+- Fail fast on invalid input
+- Return clear validation error messages
+
+**Output Consistency**:
+- Standardized response format across workflows
+- Always include `success` boolean
+- Include `message` for user display
+- Add `data` object for returned information
+
+### Testing Strategy
+
+**Manual Testing**:
+- Use n8n's "Execute Workflow" button
+- Provide sample input data
+- Verify each node's output
+- Check final response format
+
+**Edge Case Testing**:
+- Test with missing fields
+- Test with invalid data types
+- Test with non-existent user/product IDs
+- Test with boundary values (stock=0, price=0)
+
+**Integration Testing**:
+- Test frontend-to-workflow communication
+- Verify database state after execution
+- Check email sending (use test email)
+- Validate full user journey
+
+**Performance Testing**:
+- Measure workflow execution time
+- Test with realistic data volumes
+- Monitor database query performance
+- Identify bottlenecks
+
+### Documentation
+
+**Workflow Naming**:
+- Clear, descriptive names
+- Consistent naming convention
+- Include operation type (Get, Create, Update, Delete)
+- Example: "Get User Orders", "Admin Update Order Status"
+
+**Workflow Notes**:
+- Add notes to complex nodes
+- Document business logic decisions
+- Explain non-obvious transformations
+- Link to related workflows
+
+**Webhook Documentation**:
+- Document expected input format
+- Describe response structure
+- List possible error messages
+- Include example requests/responses
+
+---
+
+## Migration Path
+
+### From n8n to Traditional Backend
+
+If the application outgrows n8n, migration is straightforward:
+
+**Step 1 - API Contract Preservation**:
+- Webhook URLs define your API contract
+- These remain the same during migration
+- Frontend continues to work unchanged
+
+**Step 2 - Gradual Migration**:
+- Migrate one workflow at a time
+- Create traditional API endpoint (Express route, FastAPI endpoint, etc.)
+- Update API_ENDPOINTS in frontend to point to new URL
+- Test thoroughly before moving to next workflow
+- n8n and traditional backend can coexist
+
+**Step 3 - Business Logic Reuse**:
+- Workflow visual logic serves as implementation spec
+- SQL queries directly reusable
+- Business rules clearly documented
+- Validation logic easily translatable
+
+**Step 4 - Data Persistence**:
+- Database remains in Supabase (no migration needed)
+- Same tables, same schema
+- Only access method changes (direct ORM vs. n8n nodes)
+
+**Example Migration** (Get Products):
+```javascript
+// Before (n8n workflow)
+Webhook → Supabase Query → Response
+
+// After (Express.js)
+app.get('/api/products', async (req, res) => {
+  const products = await supabase
+    .from('products')
+    .select('*, product_images(*)')
+    .eq('is_active', true);
+  
+  res.json(products);
+});
+```
+
+**Cost-Benefit Analysis**:
+- Migration needed only if n8n limitations hit
+- Most stores never need to migrate
+- Cost of migration vs. cost of staying on n8n
+- Developer time for rewrite vs. n8n subscription
+
+---
+
+## Conclusion
+
+The n8n-based backend architecture provides a pragmatic solution for e-commerce applications that prioritizes:
+
+- **Rapid Development**: Build and deploy features in hours, not days
+- **Maintainability**: Visual workflows are self-documenting
+- **Flexibility**: Change business logic without code rewrites
+- **Cost Efficiency**: Single platform for all backend needs
+- **Accessibility**: Non-developers can understand and contribute
+
+While not suitable for all use cases, n8n excels in the "sweet spot" of small to medium applications where agility and simplicity matter more than raw performance. The visual workflow paradigm makes the backend transparent, debuggable, and modifiable by a wider range of team members.
+
+For ShopHub, n8n serves as the entire backend infrastructure—handling product catalog, cart management, order processing, admin operations, and customer communications—without a single line of traditional backend code. This architectural choice enables rapid iteration, easy debugging, and a lower barrier to entry for developers and business stakeholders alike.
+
+---
