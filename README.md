@@ -5113,3 +5113,1043 @@ The ShopHub AI chatbot represents a sophisticated multi-agent system that combin
 The chatbot demonstrates how modern AI can be safely and effectively integrated into e-commerce, providing genuine value to customers while maintaining security and reliability. The architecture is designed for expansion, with clear pathways to add new agents, tools, and capabilities as business needs evolve.
 
 ---
+
+# Deployment & Hosting
+
+## Overview
+
+ShopHub uses a modern, distributed hosting architecture where each component—frontend, backend, and database—is hosted on a specialized platform optimized for its purpose. This separation of concerns provides flexibility, scalability, and cost-efficiency while keeping deployment simple and maintenance straightforward.
+
+**Three-Tier Hosting Architecture**:
+```
+Frontend (GitHub Pages)
+    ↓ HTTPS Requests
+Backend (n8n)
+    ↓ Database Queries
+Database & Auth (Supabase)
+```
+
+This architecture means:
+- No single server to manage or maintain
+- Each component can scale independently
+- Service-specific optimizations (CDN for frontend, workflow execution for backend, database clustering for Supabase)
+- Cost scales with actual usage, not reserved capacity
+- Simple deployment process with minimal DevOps requirements
+
+---
+
+## For Non-Technical Readers
+
+### What "Hosting" Means
+
+Hosting refers to where the application's files and data are stored and how they are made accessible to users over the internet. Think of it like renting space in three different specialized facilities:
+
+- **Frontend Hosting**: Like a storefront window—displays the website to customers
+- **Backend Hosting**: Like a warehouse manager—handles orders and operations
+- **Database Hosting**: Like a filing cabinet—stores all product and customer data
+
+Each component is hosted by a service that specializes in that type of work, ensuring reliability and performance.
+
+---
+
+### Frontend Hosting: GitHub Pages
+
+**What is GitHub Pages?**
+GitHub Pages is a free static website hosting service provided by GitHub. It's designed for websites built with HTML, CSS, and JavaScript—exactly what ShopHub's frontend uses.
+
+**Why GitHub Pages?**:
+- **Free**: No hosting costs for public repositories
+- **Simple Deployment**: Push code to GitHub, website updates automatically
+- **Fast**: Content delivered via global CDN (Content Delivery Network)
+- **Reliable**: 99.9% uptime backed by GitHub's infrastructure
+- **HTTPS**: Free SSL certificates for secure connections
+- **Custom Domains**: Can use your own domain name (e.g., www.shophub.com)
+
+**How It Works**:
+1. Developer pushes HTML/CSS/JavaScript files to GitHub repository
+2. GitHub Pages automatically builds and deploys the website
+3. Website becomes accessible at `username.github.io/repository-name`
+4. Updates happen automatically with every code push (typically 1-2 minutes)
+
+**User Experience**:
+- Website loads quickly from nearest CDN server
+- No server to crash or go offline
+- Handles traffic spikes automatically (flash sales, marketing campaigns)
+- Available 24/7 without maintenance windows
+
+**Scalability**:
+GitHub Pages easily handles:
+- Small stores: 100-1,000 visitors per day
+- Medium stores: 1,000-10,000 visitors per day
+- Large stores: 10,000-100,000+ visitors per day
+
+Since the frontend is just static files, it can serve virtually unlimited traffic. The CDN automatically scales to demand.
+
+---
+
+### Backend Hosting: n8n
+
+**What is n8n?**
+n8n is a workflow automation platform that can be self-hosted (on your own servers) or used as a cloud service. For ShopHub, it replaces traditional backend servers with visual workflows.
+
+**Hosting Options**:
+
+**Option 1: n8n Cloud (Recommended for Most Users)**
+- **Managed Hosting**: n8n handles all infrastructure, updates, and scaling
+- **Pricing**: Pay per workflow execution (~$20-$50/month for small stores)
+- **Setup Time**: 10 minutes—create account, import workflows, configure webhooks
+- **Maintenance**: Zero—automatic updates, backups, monitoring
+- **Scaling**: Automatic—n8n adjusts resources based on traffic
+- **Reliability**: 99.9% uptime SLA
+- **Best For**: Most stores, especially those without technical teams
+
+**Option 2: Self-Hosted n8n**
+- **Deployment**: Host on your own cloud server (DigitalOcean, AWS, etc.)
+- **Pricing**: Server costs only (~$10-$40/month), unlimited executions
+- **Setup Time**: 1-2 hours—provision server, install Docker, configure n8n
+- **Maintenance**: Requires updates, backups, monitoring by your team
+- **Scaling**: Manual—upgrade server or add load balancer as traffic grows
+- **Control**: Full control over data, environment, customizations
+- **Best For**: Technical teams, high-volume stores, data residency requirements
+
+**How It Works**:
+1. Workflows run in response to webhook requests from frontend
+2. n8n executes business logic (validate data, query database, send emails)
+3. Results returned to frontend via HTTP response
+4. Workflows can run in parallel (multiple users simultaneously)
+5. Execution logs stored for debugging and monitoring
+
+**User Impact**:
+- Users never see or interact with n8n directly
+- Fast response times (typically <1 second for most operations)
+- Reliable order processing and cart management
+- Automatic email notifications and chatbot responses
+
+**Scalability**:
+- **n8n Cloud**: Automatically scales from 10 to 10,000+ executions per hour
+- **Self-Hosted**: Scale by upgrading server (more CPU, RAM) or adding instances
+- **Typical Load**: Small store = 100-500 executions/day, Medium store = 500-5,000/day
+
+---
+
+### Database Hosting: Supabase
+
+**What is Supabase?**
+Supabase is a managed PostgreSQL database service with built-in authentication. It handles all database hosting, backups, and security.
+
+**Why Supabase?**:
+- **Managed Service**: No database administration required
+- **PostgreSQL**: Industry-standard, reliable, feature-rich database
+- **Built-in Auth**: User registration and login included
+- **Automatic Backups**: Daily backups with point-in-time recovery (paid plans)
+- **Free Tier**: Up to 500MB database, 50,000 monthly active users
+- **Scalable**: Upgrade to Pro for more storage and performance
+- **Global CDN**: Authentication requests served from nearest data center
+
+**How It Works**:
+1. Supabase hosts PostgreSQL database in secure data center
+2. n8n connects via Service Role Key (secured connection)
+3. All data operations (create orders, update cart) happen through n8n
+4. Frontend authentication handled directly by Supabase (login/register)
+5. Automatic backups run daily
+
+**Data Security**:
+- Encrypted connections (TLS/SSL)
+- Row Level Security (RLS) policies available
+- Service Role Key stored securely in n8n (never exposed to frontend)
+- Automatic security updates
+
+**Scalability**:
+Supabase scales through pricing tiers:
+- **Free**: 500MB storage, 2 CPU cores, 1GB RAM
+  - Suitable for: 0-10,000 products, 0-1,000 orders/month
+- **Pro**: 8GB+ storage, 4+ CPU cores, 4GB+ RAM (~$25/month)
+  - Suitable for: 10,000-100,000 products, 1,000-10,000 orders/month
+- **Enterprise**: Custom resources, dedicated servers
+  - Suitable for: 100,000+ products, 10,000+ orders/month
+
+**User Experience**:
+- Fast database queries (<100ms for most operations)
+- Login/registration works reliably
+- Data always consistent and available
+- No downtime for backups or maintenance
+
+---
+
+## For Technical Readers
+
+### Deployment Architecture
+
+**Infrastructure Diagram**:
+```
+                     Internet
+                         |
+        +----------------+----------------+
+        |                |                |
+        v                v                v
+  GitHub Pages         n8n          Supabase
+  (Static CDN)    (Workflows)    (PostgreSQL + Auth)
+        |                |                |
+    HTML/CSS/JS    Business Logic    Data Storage
+        |                |                |
+        +--------> HTTPS API <------------+
+                   Webhooks
+```
+
+**Request Flow Example** (Add to Cart):
+```
+1. User clicks "Add to Cart" on GitHub Pages site
+2. JavaScript sends POST to n8n webhook URL
+3. n8n workflow validates request
+4. n8n queries Supabase (check product exists, stock available)
+5. n8n inserts cart_items record in Supabase
+6. n8n returns success response
+7. GitHub Pages updates UI (show confirmation, update badge)
+```
+
+---
+
+### Frontend Deployment (GitHub Pages)
+
+**Setup Process**:
+
+**Step 1: Create GitHub Repository**
+```bash
+# Initialize git repository locally
+git init
+
+# Add all frontend files
+git add index.html products.html cart.html checkout.html
+git add styles.css api.js chatbot.js chatbot.css
+git add admin-*.html order*.html feedback.html login.html register.html
+
+# Commit files
+git commit -m "Initial commit: ShopHub frontend"
+
+# Create repository on GitHub (via web interface or CLI)
+# Link local repo to GitHub
+git remote add origin https://github.com/username/shophub-frontend.git
+git branch -M main
+git push -u origin main
+```
+
+**Step 2: Enable GitHub Pages**
+1. Go to repository Settings
+2. Navigate to "Pages" section
+3. Select source: "Deploy from branch"
+4. Select branch: `main`
+5. Select folder: `/ (root)`
+6. Click "Save"
+7. Wait 1-2 minutes for deployment
+8. Access site at: `https://username.github.io/shophub-frontend/`
+
+**Step 3: Configure API Endpoints**
+Update `api.js` with production webhook URLs:
+```javascript
+const API_BASE_URL = 'https://your-n8n-instance.com/webhook';
+
+const API_ENDPOINTS = {
+  GET_PRODUCTS: `${API_BASE_URL}/get_products`,
+  ADD_TO_CART: `${API_BASE_URL}/add_to_cart`,
+  // ... other endpoints
+};
+```
+
+**Step 4: Update Supabase Credentials**
+Replace development credentials in `api.js`:
+```javascript
+const SUPABASE_URL = 'https://your-project.supabase.co';
+const SUPABASE_ANON_KEY = 'your-anon-public-key';
+```
+
+**Custom Domain Setup** (Optional):
+1. Purchase domain (e.g., www.shophub.com)
+2. Add CNAME file to repository root:
+   ```
+   www.shophub.com
+   ```
+3. Configure DNS records at domain registrar:
+   ```
+   Type: CNAME
+   Host: www
+   Value: username.github.io
+   ```
+4. Wait for DNS propagation (5 minutes - 48 hours)
+5. GitHub automatically provisions SSL certificate
+
+**CI/CD Pipeline**:
+GitHub Pages provides automatic continuous deployment:
+- Push to `main` branch → Automatic deployment
+- Pull request merges → Automatic deployment
+- No build step required (static files served directly)
+- Deployment typically completes in 60-120 seconds
+
+**Performance Optimizations**:
+- **CDN**: GitHub serves files from global CDN (low latency worldwide)
+- **Caching**: Static files cached aggressively by browsers
+- **Compression**: GitHub automatically gzips files
+- **HTTP/2**: Modern protocol for faster loading
+
+**Monitoring**:
+- GitHub Actions for deployment status
+- Browser DevTools for frontend errors
+- Third-party monitoring (Uptime Robot, Pingdom) for availability
+
+**Limitations**:
+- 100GB bandwidth per month (soft limit, contact GitHub if exceeded)
+- 1GB repository size limit (not an issue for code-only repos)
+- Static files only (no server-side code execution)
+- No environment variables (use separate config files)
+
+---
+
+### Backend Deployment (n8n)
+
+**n8n Cloud Deployment**:
+
+**Step 1: Create n8n Cloud Account**
+1. Sign up at n8n.cloud
+2. Choose plan (Pro recommended: $25/month, 100K executions)
+3. Create workspace
+
+**Step 2: Import Workflows**
+Option A: Manual Creation
+- Recreate each workflow using n8n visual editor
+- Configure webhook URLs
+- Set up Supabase connections
+
+Option B: Import JSON (Recommended)
+- Export workflows from development as JSON
+- Import to n8n Cloud
+- Update credentials and environment variables
+
+**Step 3: Configure Environment Variables**
+In n8n Cloud settings, add:
+- `SUPABASE_URL`: Your Supabase project URL
+- `SUPABASE_SERVICE_ROLE_KEY`: Service role key from Supabase
+- `ADMIN_PASSWORD`: Admin token for protected operations
+- `OPENAI_API_KEY`: For chatbot functionality
+- `EMAIL_USER`, `EMAIL_PASSWORD`: For email notifications
+
+**Step 4: Activate Workflows**
+- Enable all production workflows
+- Test each webhook endpoint (use Postman or curl)
+- Verify database connections
+- Check execution logs for errors
+
+**Step 5: Update Frontend**
+Update webhook URLs in frontend `api.js`:
+```javascript
+const API_BASE_URL = 'https://your-n8n-cloud.app.n8n.cloud/webhook';
+```
+
+**Self-Hosted Deployment (Docker)**:
+
+**Prerequisites**:
+- Cloud server (DigitalOcean Droplet, AWS EC2, etc.)
+- Docker and Docker Compose installed
+- Domain name pointed to server IP
+
+**Step 1: Server Setup**
+```bash
+# SSH into server
+ssh root@your-server-ip
+
+# Update system
+apt update && apt upgrade -y
+
+# Install Docker
+curl -fsSL https://get.docker.com -o get-docker.sh
+sh get-docker.sh
+
+# Install Docker Compose
+apt install docker-compose -y
+```
+
+**Step 2: n8n Installation**
+Create `docker-compose.yml`:
+```yaml
+version: '3.8'
+
+services:
+  n8n:
+    image: n8nio/n8n:latest
+    restart: always
+    ports:
+      - "5678:5678"
+    environment:
+      - N8N_BASIC_AUTH_ACTIVE=true
+      - N8N_BASIC_AUTH_USER=admin
+      - N8N_BASIC_AUTH_PASSWORD=your-secure-password
+      - N8N_HOST=your-domain.com
+      - N8N_PROTOCOL=https
+      - WEBHOOK_URL=https://your-domain.com
+      - GENERIC_TIMEZONE=America/New_York
+    volumes:
+      - n8n_data:/home/node/.n8n
+
+volumes:
+  n8n_data:
+```
+
+Start n8n:
+```bash
+docker-compose up -d
+```
+
+**Step 3: Reverse Proxy (Nginx + SSL)**
+Install and configure Nginx with Let's Encrypt SSL:
+```bash
+apt install nginx certbot python3-certbot-nginx -y
+
+# Configure Nginx
+nano /etc/nginx/sites-available/n8n
+
+# Add configuration:
+server {
+    server_name your-domain.com;
+    
+    location / {
+        proxy_pass http://localhost:5678;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+}
+
+# Enable site
+ln -s /etc/nginx/sites-available/n8n /etc/nginx/sites-enabled/
+nginx -t
+systemctl reload nginx
+
+# Get SSL certificate
+certbot --nginx -d your-domain.com
+```
+
+**Step 4: Import Workflows**
+- Access n8n at `https://your-domain.com`
+- Import workflow JSON files
+- Configure credentials
+- Activate workflows
+
+**Monitoring Self-Hosted n8n**:
+- Check execution logs in n8n UI
+- Monitor server resources (CPU, RAM, disk):
+  ```bash
+  htop  # Resource usage
+  df -h  # Disk space
+  docker stats  # Container resources
+  ```
+- Set up log aggregation (optional):
+  - Grafana + Prometheus for metrics
+  - ELK stack for log analysis
+
+**Backup Strategy**:
+```bash
+# Backup n8n data volume
+docker run --rm -v n8n_data:/data -v $(pwd):/backup \
+  alpine tar czf /backup/n8n-backup-$(date +%Y%m%d).tar.gz /data
+
+# Schedule daily backups (cron)
+0 2 * * * /path/to/backup-script.sh
+```
+
+**Scaling Self-Hosted n8n**:
+- **Vertical Scaling**: Upgrade server (more CPU, RAM)
+- **Horizontal Scaling**: Deploy multiple n8n instances behind load balancer
+- **Queue System**: Add Redis for job queuing (high-volume scenarios)
+
+---
+
+### Database Deployment (Supabase)
+
+**Setup Process**:
+
+**Step 1: Create Supabase Project**
+1. Sign up at supabase.com
+2. Create new project
+3. Choose region (nearest to target users)
+4. Set database password (store securely)
+5. Wait for project provisioning (2-3 minutes)
+
+**Step 2: Create Database Schema**
+Execute SQL to create tables (via Supabase SQL Editor):
+```sql
+-- Create products table
+CREATE TABLE products (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  name TEXT NOT NULL,
+  description TEXT,
+  price NUMERIC(10, 2) NOT NULL,
+  category TEXT,
+  stock_quantity INTEGER NOT NULL DEFAULT 0,
+  is_active BOOLEAN DEFAULT true,
+  created_at TIMESTAMP DEFAULT now(),
+  updated_at TIMESTAMP DEFAULT now()
+);
+
+-- Create product_images table
+CREATE TABLE product_images (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  product_id UUID REFERENCES products(id) ON DELETE CASCADE,
+  image_url TEXT NOT NULL,
+  is_primary BOOLEAN DEFAULT false,
+  display_order INTEGER,
+  created_at TIMESTAMP DEFAULT now()
+);
+
+-- Create cart table
+CREATE TABLE cart (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  created_at TIMESTAMP DEFAULT now(),
+  updated_at TIMESTAMP DEFAULT now(),
+  UNIQUE(user_id)
+);
+
+-- Create cart_items table
+CREATE TABLE cart_items (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  cart_id UUID REFERENCES cart(id) ON DELETE CASCADE,
+  product_id UUID REFERENCES products(id) ON DELETE CASCADE,
+  quantity INTEGER NOT NULL DEFAULT 1,
+  created_at TIMESTAMP DEFAULT now(),
+  updated_at TIMESTAMP DEFAULT now(),
+  UNIQUE(cart_id, product_id)
+);
+
+-- Create orders table
+CREATE TABLE orders (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  order_number TEXT UNIQUE NOT NULL,
+  total_amount NUMERIC(10, 2) NOT NULL,
+  status TEXT NOT NULL,
+  payment_method TEXT,
+  shipping_address JSONB NOT NULL,
+  phone_number TEXT NOT NULL,
+  notes TEXT,
+  created_at TIMESTAMP DEFAULT now(),
+  updated_at TIMESTAMP DEFAULT now()
+);
+
+-- Create order_items table
+CREATE TABLE order_items (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  order_id UUID REFERENCES orders(id) ON DELETE CASCADE,
+  product_id UUID REFERENCES products(id),
+  quantity INTEGER NOT NULL,
+  price_at_purchase NUMERIC(10, 2) NOT NULL,
+  created_at TIMESTAMP DEFAULT now()
+);
+
+-- Create user_feedback table
+CREATE TABLE user_feedback (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  user_email TEXT,
+  feedback_type TEXT,
+  rating INTEGER,
+  actual_feedback TEXT,
+  suggestions TEXT,
+  sentiment TEXT,
+  created_at TIMESTAMP DEFAULT now()
+);
+
+-- Create chatbot_feedback table
+CREATE TABLE chatbot_feedback (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+  feedback TEXT,
+  sentiment TEXT,
+  created_at TIMESTAMP DEFAULT now()
+);
+
+-- Create indexes for performance
+CREATE INDEX idx_products_category ON products(category);
+CREATE INDEX idx_products_is_active ON products(is_active);
+CREATE INDEX idx_cart_user_id ON cart(user_id);
+CREATE INDEX idx_cart_items_cart_id ON cart_items(cart_id);
+CREATE INDEX idx_orders_user_id ON orders(user_id);
+CREATE INDEX idx_orders_status ON orders(status);
+CREATE INDEX idx_order_items_order_id ON order_items(order_id);
+```
+
+**Step 3: Enable Authentication**
+1. Go to Authentication → Settings
+2. Enable Email provider
+3. Configure email templates (confirmation, password reset)
+4. Set Site URL: `https://username.github.io/shophub-frontend/`
+5. Add Redirect URLs for OAuth (if using social login)
+
+**Step 4: Configure API Keys**
+1. Go to Project Settings → API
+2. Copy Project URL (e.g., `https://abc123.supabase.co`)
+3. Copy `anon public` key (for frontend)
+4. Copy `service_role` key (for n8n - keep secret!)
+
+**Step 5: Set Up Row Level Security (Optional)**
+Enable RLS for additional security:
+```sql
+-- Enable RLS on tables
+ALTER TABLE cart ENABLE ROW LEVEL SECURITY;
+ALTER TABLE cart_items ENABLE ROW LEVEL SECURITY;
+ALTER TABLE orders ENABLE ROW LEVEL SECURITY;
+ALTER TABLE order_items ENABLE ROW LEVEL SECURITY;
+
+-- Create policies (examples)
+-- Users can only view their own cart
+CREATE POLICY "Users can view own cart" ON cart
+  FOR SELECT USING (auth.uid() = user_id);
+
+-- Users can only view their own orders
+CREATE POLICY "Users can view own orders" ON orders
+  FOR SELECT USING (auth.uid() = user_id);
+```
+
+Note: RLS policies are bypassed by n8n's Service Role Key, but provide defense-in-depth security.
+
+**Step 6: Configure Backups**
+- Free tier: 7 days of backups (daily)
+- Pro tier: Point-in-time recovery (restore to any second)
+- Enterprise: Custom retention and geo-replication
+
+Enable automatic backups in dashboard (enabled by default).
+
+**Database Monitoring**:
+Supabase dashboard provides:
+- Database size and growth
+- Active connections
+- Query performance
+- API request volume
+- Authentication statistics
+
+**Scaling Supabase**:
+Upgrade path:
+1. **Free** → **Pro** ($25/month): More storage, compute, and backups
+2. **Pro** → **Enterprise**: Dedicated resources, custom limits
+3. **Read Replicas**: Add read-only replicas for query-heavy workloads
+4. **Connection Pooling**: Built-in (handled automatically)
+
+---
+
+## Cost Analysis
+
+### Typical Monthly Costs
+
+**Small Store** (100-500 orders/month):
+- Frontend (GitHub Pages): $0 (free)
+- Backend (n8n Cloud Pro): $25
+- Database (Supabase Pro): $25
+- **Total**: $50/month
+
+**Medium Store** (500-5,000 orders/month):
+- Frontend (GitHub Pages): $0 (free)
+- Backend (n8n Cloud Pro): $50 (higher execution volume)
+- Database (Supabase Pro): $25-50 (more storage)
+- **Total**: $75-100/month
+
+**Large Store** (5,000+ orders/month):
+- Frontend (GitHub Pages): $0 (free, or custom hosting)
+- Backend (n8n Cloud Business): $100+ (enterprise features)
+- Database (Supabase Enterprise): $500+ (dedicated resources)
+- **Total**: $600+/month
+
+**Self-Hosted Alternative** (any size):
+- Frontend (GitHub Pages): $0
+- Backend (DigitalOcean Droplet): $20-80/month (depending on server size)
+- Database (Supabase Free or Pro): $0-25/month
+- **Total**: $20-105/month (+ maintenance time)
+
+**Cost Optimization Tips**:
+- Start with free/lowest tiers
+- Monitor usage and upgrade only when needed
+- Self-host n8n if high execution volume
+- Use Supabase free tier during development
+- Cache frequently accessed data to reduce database queries
+
+---
+
+## Scalability
+
+### Current Architecture Limits
+
+**GitHub Pages**:
+- Bandwidth: 100GB/month (contact GitHub if exceeded)
+- Files: Unlimited static files
+- Traffic: Virtually unlimited (CDN handles scaling)
+- **Realistic Limit**: 1-10 million page views/month before considering alternatives
+
+**n8n Cloud**:
+- Free: 2,500 executions/month
+- Pro: 100,000 executions/month
+- Business: 1 million+ executions/month
+- **Realistic Limit**: 10,000-100,000 orders/month on Pro plan
+
+**Self-Hosted n8n**:
+- Limited by server resources (CPU, RAM)
+- Single server: 1,000-10,000 executions/hour
+- Multiple instances: 10,000-100,000+ executions/hour
+- **Realistic Limit**: 100,000+ orders/month with load balancing
+
+**Supabase**:
+- Free: 500MB storage, 50,000 active users
+- Pro: 8GB+ storage, 100,000+ active users
+- Enterprise: Unlimited (dedicated resources)
+- **Realistic Limit**: 100,000 products, 1 million orders (Pro plan)
+
+### Scaling Strategies
+
+**Vertical Scaling** (Upgrade Resources):
+- Easiest approach for growing stores
+- Upgrade n8n plan (more executions)
+- Upgrade Supabase plan (more storage, compute)
+- Minimal code changes required
+
+**Horizontal Scaling** (Add Resources):
+- For high-volume stores (10,000+ orders/day)
+- Add multiple n8n instances behind load balancer
+- Add Supabase read replicas for query distribution
+- Requires architecture changes
+
+**Caching Layer** (Reduce Database Load):
+- Add Redis cache for frequently accessed data
+- Cache product catalog (updated hourly)
+- Cache user sessions
+- Reduce database queries by 50-80%
+
+**CDN Optimization** (Faster Frontend):
+- GitHub Pages already uses CDN
+- Custom CDN (Cloudflare) for additional features
+- Cache API responses at edge (for public data)
+
+**Database Optimization**:
+- Add indexes on frequently queried columns
+- Partition large tables (orders) by date
+- Archive old orders to separate table
+- Optimize slow queries
+
+### When to Migrate
+
+**Signs You've Outgrown Current Architecture**:
+- n8n execution limits hit regularly (need higher plan)
+- Supabase storage exceeding plan limits
+- Database queries consistently slow (>1 second)
+- Workflow complexity becoming unmanageable (100+ workflows)
+- Need for advanced features (real-time WebSockets, GraphQL)
+
+**Migration Path to Traditional Backend**:
+
+**Phase 1: Gradual Migration**
+- Keep n8n for existing workflows
+- Build new features with traditional backend (Node.js, Python, etc.)
+- Frontend calls both n8n webhooks and new API
+- Migrate workflows one-by-one to new backend
+
+**Phase 2: Complete Migration**
+- Translate n8n workflows to traditional backend code
+- Workflow visual logic serves as implementation spec
+- Database remains in Supabase (or migrate to RDS, self-hosted PostgreSQL)
+- Frontend updated to call new API endpoints
+
+**Example Migration** (Add to Cart):
+```javascript
+// Before (n8n webhook)
+POST https://n8n-instance.com/webhook/add_to_cart
+
+// After (Express.js API)
+POST https://api.shophub.com/v1/cart/items
+
+// Frontend code change:
+// const response = await fetch(API_ENDPOINTS.ADD_TO_CART, {...});
+// Changes to:
+// const response = await fetch('https://api.shophub.com/v1/cart/items', {...});
+```
+
+**Migration Effort Estimate**:
+- Small store (20-30 workflows): 2-4 weeks
+- Medium store (30-50 workflows): 1-2 months
+- Large store (50+ workflows): 2-4 months
+
+**When Migration Makes Sense**:
+- Execution costs exceed self-hosted server costs
+- Need features n8n doesn't support well (real-time, complex algorithms)
+- In-house development team prefers traditional code
+- Compliance requires specific infrastructure setup
+
+**When to Stay with n8n**:
+- Current architecture meets all needs
+- Cost-effective at current scale
+- Team comfortable with visual workflows
+- No pressing technical limitations
+
+---
+
+## High Availability & Disaster Recovery
+
+### Uptime Expectations
+
+**Component SLAs**:
+- **GitHub Pages**: 99.9% uptime (8.7 hours downtime/year)
+- **n8n Cloud**: 99.9% uptime
+- **Supabase**: 99.9% uptime (Pro plan)
+- **Combined**: ~99.7% uptime (system availability)
+
+**Real-World Impact**:
+- 99.7% = 26 hours downtime per year
+- Most downtime is minutes, not hours
+- Planned maintenance typically during low-traffic periods
+
+### Backup Strategy
+
+**Frontend (GitHub Pages)**:
+- Automatic: Git repository is backup
+- Manual: Download repository as ZIP
+- Frequency: Continuous (every commit)
+- Recovery: Restore from any commit in git history
+
+**Backend (n8n)**:
+- n8n Cloud: Automatic backups by n8n
+- Self-Hosted: Manual backup of Docker volumes
+- Frequency: Daily (minimum)
+- Recovery: Import workflow JSON files
+
+**Database (Supabase)**:
+- Automatic: Daily backups (7-day retention on free, 30-day on Pro)
+- Point-in-Time: Restore to any second (Pro plan)
+- Frequency: Continuous (transaction log)
+- Recovery: Self-service restore via dashboard
+
+### Disaster Recovery Procedure
+
+**Scenario 1: Frontend Down (GitHub Pages Outage)**
+1. Check GitHub Status (status.github.com)
+2. If prolonged, deploy to alternative static host (Netlify, Vercel)
+3. Update DNS to point to new host
+4. Typical recovery time: 10-30 minutes
+
+**Scenario 2: Backend Down (n8n Outage)**
+1. Check n8n status page (if using n8n Cloud)
+2. If self-hosted, check server health and restart n8n container
+3. Review n8n logs for errors
+4. If prolonged, deploy to backup n8n instance
+5. Typical recovery time: 5-60 minutes
+
+**Scenario 3: Database Down (Supabase Outage)**
+1. Check Supabase status page
+2. No user action needed (Supabase handles recovery)
+3. If data corruption, restore from latest backup
+4. Typical recovery time: 5-30 minutes (automatic), or 1-2 hours (restore)
+
+**Scenario 4: Data Loss (Accidental Deletion)**
+1. Stop all workflows immediately (prevent further changes)
+2. Access Supabase dashboard
+3. Restore from latest backup
+4. Review restoration (verify data integrity)
+5. Resume operations
+6. Typical recovery time: 30 minutes - 2 hours
+
+---
+
+## Security Considerations
+
+### Secure Deployment Practices
+
+**Frontend Security**:
+- HTTPS enforced (GitHub Pages provides automatic SSL)
+- No hardcoded secrets in code (use environment-specific config)
+- Content Security Policy headers (configure via meta tags)
+- Subresource Integrity for external libraries
+
+**Backend Security**:
+- Environment variables for all secrets (never in workflow code)
+- Webhook authentication (verify requests come from frontend)
+- Rate limiting to prevent abuse
+- Regular updates (n8n Cloud handles automatically)
+
+**Database Security**:
+- Service Role Key stored only in n8n (never in frontend or git)
+- Row Level Security policies (optional additional layer)
+- Encrypted connections (TLS/SSL)
+- Regular security updates (Supabase handles automatically)
+
+**Access Control**:
+- GitHub: Two-factor authentication enabled for all admins
+- n8n: Strong passwords, 2FA (if available)
+- Supabase: Strong password, 2FA enabled
+- Least privilege: Only grant minimum necessary permissions
+
+**Secret Management**:
+- Use environment variables for all API keys
+- Rotate keys periodically (quarterly)
+- Never commit secrets to git
+- Use `.gitignore` to exclude config files with secrets
+
+### SSL/TLS Configuration
+
+**GitHub Pages**:
+- Automatic SSL via Let's Encrypt
+- Enforced HTTPS (HTTP redirects to HTTPS)
+- Free, no configuration needed
+
+**n8n Self-Hosted**:
+- SSL via Let's Encrypt (Certbot)
+- Automatic renewal (certbot handles)
+- Reverse proxy (Nginx) terminates SSL
+
+**Supabase**:
+- All connections encrypted by default
+- No additional configuration needed
+
+---
+
+## Monitoring & Alerts
+
+### What to Monitor
+
+**Frontend (GitHub Pages)**:
+- Deployment status (successful/failed)
+- Page load times (Google PageSpeed Insights)
+- JavaScript errors (Sentry, Rollbar)
+- Uptime (Uptime Robot, Pingdom)
+
+**Backend (n8n)**:
+- Workflow execution success rate
+- Execution duration (detect slow workflows)
+- Error frequency and types
+- Webhook endpoint availability
+
+**Database (Supabase)**:
+- Database size (approaching limits?)
+- Query performance (slow queries)
+- Connection count (approaching limits?)
+- Authentication errors
+
+**Business Metrics**:
+- Orders per day
+- Cart abandonment rate
+- Product views
+- Chatbot usage
+
+### Setting Up Alerts
+
+**Critical Alerts** (Immediate Action):
+- n8n workflow execution failure rate >10%
+- Supabase database >90% full
+- GitHub Pages deployment failed
+- Webhook endpoints returning errors >5%
+
+**Warning Alerts** (Review Soon):
+- Supabase database >75% full
+- Slow workflow executions (>10 seconds)
+- Unusual traffic spikes
+- Error rate increasing
+
+**Monitoring Tools**:
+- **n8n Built-in**: Execution logs and error tracking
+- **Supabase Dashboard**: Database metrics and logs
+- **GitHub Actions**: Deployment status
+- **External**: Uptime Robot, New Relic, Datadog (optional)
+
+---
+
+## Best Practices
+
+### Deployment Checklist
+
+**Before Deploying**:
+- [ ] Test all features in development environment
+- [ ] Update API endpoint URLs in `api.js`
+- [ ] Update Supabase credentials (production keys)
+- [ ] Test all n8n workflows with production data
+- [ ] Backup current database
+- [ ] Review and update environment variables
+- [ ] Test authentication flow (register, login, logout)
+- [ ] Verify chatbot functionality
+- [ ] Check email notifications
+- [ ] Test admin functions
+
+**During Deployment**:
+- [ ] Deploy during low-traffic period (e.g., 2 AM)
+- [ ] Monitor error logs in real-time
+- [ ] Test critical user paths (add to cart, checkout, order tracking)
+- [ ] Verify database operations
+- [ ] Check email delivery
+
+**After Deployment**:
+- [ ] Monitor for 24 hours
+- [ ] Review error logs
+- [ ] Check user feedback
+- [ ] Verify analytics data
+- [ ] Keep previous version ready for rollback
+
+### Version Control
+
+**Git Branching Strategy**:
+```
+main (production)
+  ↑
+develop (staging)
+  ↑
+feature/* (feature branches)
+```
+
+**Deployment Flow**:
+1. Develop feature in `feature/new-feature` branch
+2. Merge to `develop` for testing
+3. Test thoroughly on development environment
+4. Merge to `main` for production deployment
+5. GitHub Pages automatically deploys `main` branch
+
+### Environment Management
+
+**Development**:
+- Local n8n instance (or n8n Cloud dev workspace)
+- Supabase development project
+- Test data in database
+- Debug logging enabled
+
+**Production**:
+- n8n Cloud production workspace (or dedicated server)
+- Supabase production project
+- Real customer data
+- Error logging only
+
+**Configuration Separation**:
+```javascript
+// api.js - Environment detection
+const isDevelopment = window.location.hostname === 'localhost';
+
+const API_BASE_URL = isDevelopment
+  ? 'http://localhost:5678/webhook'
+  : 'https://production-n8n.app.n8n.cloud/webhook';
+
+const SUPABASE_URL = isDevelopment
+  ? 'https://dev-project.supabase.co'
+  : 'https://prod-project.supabase.co';
+```
+
+---
+
+## Conclusion
+
+ShopHub's deployment architecture leverages best-in-class managed services for each component:
+- **GitHub Pages** for fast, reliable frontend hosting with global CDN
+- **n8n** for flexible, visual backend workflows with simple scaling
+- **Supabase** for managed PostgreSQL database with built-in authentication
+
+This architecture provides:
+- **Low Cost**: Free frontend hosting, pay-as-you-go for backend and database
+- **High Reliability**: 99.9% uptime from each service
+- **Simple Deployment**: Push to git → automatic frontend deployment
+- **Easy Scaling**: Upgrade service tiers as traffic grows
+- **Migration Path**: Clear path to traditional backend if needed
+
+The deployment process is straightforward enough for solo developers yet robust enough to scale to thousands of orders per month. The separation of concerns means each component can be maintained, upgraded, or replaced independently without affecting the others.
+
+For most e-commerce stores, this architecture will never need migration—the hosting services scale well beyond typical requirements. If the business does outgrow n8n or Supabase, the migration path is clear and can be executed gradually without downtime.
+
+---
+
+**End of Deployment & Hosting Documentation**
+
+---
