@@ -176,3 +176,48 @@ costs by approximately **30%–65%** compared to a traditional setup, while also
 This makes the system particularly suitable for startups and growing e-commerce
 businesses seeking cost efficiency and operational flexibility.
 
+---
+
+## Cost Drivers & Scalability Considerations
+
+The primary factors influencing the overall monthly cost of the system include:
+
+- AI agent execution frequency  
+- Database and file storage growth  
+- Workflow execution volume  
+- API usage and realtime connections  
+
+As usage increases, the system scales primarily by **upgrading service plans** (Supabase, n8n, AI usage) rather than requiring architectural redesign. This allows the platform to grow smoothly alongside business demand.
+
+---
+
+## Excluded Costs
+
+The following costs are intentionally excluded from the cost analysis due to variability and dependency on external provider choices:
+
+- Frontend hosting
+- Custom domains
+- Third-party payment gateways
+- Email and SMS service providers
+
+These costs depend on selected vendors, traffic volume, and business-specific requirements, and therefore cannot be reliably estimated within a generalized cost model.
+
+---
+
+## Known Limitations
+
+- Cost estimates rely on the accuracy of user-provided input
+- AI usage costs may vary based on prompt size and response length
+- Sudden traffic spikes can increase monthly operational expenses
+- Frontend hosting costs are not automatically calculated
+
+---
+
+## Conclusion
+
+This cost analysis combines:
+
+- **Static baseline estimation** for documentation clarity and reference
+- **Dynamic AI-powered cost estimation** for real-world, usage-based accuracy
+
+Together, these approaches provide a realistic, scalable, and buyer-friendly method for evaluating the operational cost of the system while supporting informed decision-making.
