@@ -8,12 +8,12 @@ The analysis focuses on transparency, scalability, and buyer-specific usage patt
 The total monthly cost is divided into the following major components:
 - Backend Platform (Supabase)
 
-  -Database storage
-  -File storage
-  -API requests
-  -Authentication usage
-  -Edge Functions
-  -Realtime connections
+  - Database storage
+  - File storage
+  - API requests
+  - Authentication usage
+  - Edge Functions
+  - Realtime connections
 
 - Automation Platform (n8n)
 
