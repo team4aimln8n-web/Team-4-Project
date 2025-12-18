@@ -17,17 +17,17 @@ The total monthly cost is divided into the following major components:
 
 - Automation Platform (n8n)
 
-  -Workflow executions
-  -Peak concurrency
-  -Cloud hosting plan
+  - Workflow executions
+  - Peak concurrency
+  - Cloud hosting plan
 
 - AI / LLM Usage
 
-  -AI agent executions
-  -Token-based processing cost
-  -Monthly execution frequency
+  - AI agent executions
+  - Token-based processing cost
+  - Monthly execution frequency
 
 - Frontend Hosting
 
-  -Treated as a variable cost
-  -Not included in final total due to provider dependency
+  - Treated as a variable cost
+  - Not included in final total due to provider dependency
