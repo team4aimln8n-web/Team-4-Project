@@ -56,6 +56,64 @@ The table below shows an approximate monthly cost for operating the system under
 
 > ⚠️ **Note:** This table is indicative only. Actual costs may vary depending on usage patterns, execution frequency, and scaling requirements.
 
+## Dynamic Cost Estimation Tool (Key Feature)
+
+To overcome the limitations of static cost tables, this project includes a **Dynamic Cost Estimation Tool** designed for buyers, evaluators, and stakeholders to calculate their **own projected monthly cost** based on actual usage requirements.
+
+🔗 **Access the Dynamic Cost Estimation Tool:**  
+[https://team4aimln8n-web.github.io/Team-4-Project/cost.html](https://team4aimln8n-web.github.io/Team-4-Project/cost.html)
+
+---
+
+### How the Tool Works
+
+1. Users enter their expected usage details, including:
+   - Number of users
+   - Database and file storage
+   - API requests
+   - Workflow executions
+   - AI agent usage
+
+2. An AI-powered cost estimation agent then:
+   - Fetches the **latest Supabase pricing**
+   - Fetches the **latest n8n pricing**
+   - Converts all prices to **USD** when required
+
+3. The system automatically:
+   - Selects the **minimum suitable plan** for each service
+   - Calculates AI usage cost based on execution frequency
+   - Generates a complete monthly cost breakdown
+
+4. The result is displayed instantly to the user in a clear and readable format.
+
+---
+
+### Output Provided
+
+The tool generates the following cost breakdown:
+
+- Selected Supabase plan and monthly cost
+- Selected n8n plan and monthly cost
+- AI (OpenAI) monthly usage cost
+- **Total estimated monthly expense (USD)**
+
+This ensures that cost estimates remain **accurate, current, and personalized**.
+
+---
+
+### Why Dynamic Cost Estimation Matters
+
+- Pricing models change frequently
+- Usage patterns vary significantly between businesses
+- AI-related costs scale with demand and execution frequency
+
+By allowing buyers to calculate costs based on their own requirements, the system enables:
+
+- Better decision-making
+- Greater cost transparency
+- Confidence in scalability and long-term planning
+
+
 ## Cost Comparison & Return on Investment (ROI)
 
 To better understand the value offered by this system, a high-level comparison is made
