@@ -55,3 +55,66 @@ The table below shows an approximate monthly cost for operating the system under
 | **Total (Estimated)** | — | **$845 – $1,255** |
 
 > ⚠️ **Note:** This table is indicative only. Actual costs may vary depending on usage patterns, execution frequency, and scaling requirements.
+
+## Cost Comparison & Return on Investment (ROI)
+
+To better understand the value offered by this system, a high-level comparison is made
+between a **traditional e-commerce setup** and the **automated system** implemented in this project.
+The goal is to highlight potential cost savings, operational efficiency, and long-term return
+on investment (ROI).
+
+All figures below are **approximate estimates** intended to provide a bird’s-eye view rather
+than exact accounting values.
+
+---
+
+### Traditional E-Commerce Setup (Manual / Tool-Based)
+
+A typical small-to-medium e-commerce store relying on conventional methods often requires
+multiple human roles and third-party tools to manage daily operations.
+
+| Resource | Approximate Monthly Cost (USD) |
+|--------|--------------------------------|
+| Customer Support Staff (1 person) | $600 – $1,200 |
+| Backend / Full-Stack Developer (part-time or contract) | $1,000 – $2,500 |
+| Helpdesk / Customer Support Software | $30 – $100 |
+| Feedback & Survey Tools | $20 – $80 |
+| Email Automation / Notification Tools | $15 – $50 |
+| **Total (Estimated)** | **$1,665 – $3,930** |
+
+As order volume and customer interactions increase, these costs typically scale upward
+due to additional staffing and tooling requirements.
+
+---
+
+### Automated System (This Project)
+
+The proposed system automates core e-commerce operations such as order handling,
+customer queries, feedback collection, and backend workflows using Supabase, n8n,
+and AI agents.
+
+| Component | Estimated Monthly Cost (USD) |
+|---------|-------------------------------|
+| Supabase & n8n Infrastructure | $45 – $60 |
+| AI / LLM Usage (agents & automation) | $800 – $1,200 |
+| **Total (Estimated)** | **$845 – $1,255** |
+
+---
+
+### ROI Interpretation
+
+By consolidating backend logic, customer support, feedback collection, and automation
+into a single AI-driven system, this project significantly reduces dependency on
+manual labor and multiple third-party services.
+
+Even with moderate AI usage, the automated approach can reduce monthly operational
+costs by approximately **30%–65%** compared to a traditional setup, while also providing:
+
+- 24/7 customer support availability  
+- Faster response times  
+- Predictable operational costs  
+- Improved scalability without proportional hiring  
+
+This makes the system particularly suitable for startups and growing e-commerce
+businesses seeking cost efficiency and operational flexibility.
+
