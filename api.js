@@ -31,21 +31,21 @@ const initSupabase = async () => {
 const API_ENDPOINTS = {
     // Customer Endpoints
    
-    GET_PRODUCTS: 'http://localhost:5678/webhook/get-products',                                // FOR LOCALLY HOSTED WORKFLOWS
-    GET_PRODUCT_DETAILS: 'http://localhost:5678/webhook/get-product',                          // FOR LOCALLY HOSTED WORKFLOWS
-    ADD_TO_CART: 'http://localhost:5678/webhook/add-to-cart',                                  // FOR LOCALLY HOSTED WORKFLOWS
-    VIEW_CART: 'http://localhost:5678/webhook/view-cart',                                      // FOR LOCALLY HOSTED WORKFLOWS
-    UPDATE_CART_ITEM: 'http://localhost:5678/webhook/update-cart-item',                        // FOR LOCALLY HOSTED WORKFLOWS
-    REMOVE_FROM_CART: 'http://localhost:5678/webhook/update-cart-item',                        // FOR LOCALLY HOSTED WORKFLOWS
-    PLACE_ORDER: 'http://localhost:5678/webhook/place-order-cod',                              // FOR LOCALLY HOSTED WORKFLOWS
-    GET_USER_ORDERS: 'http://localhost:5678/webhook/get-user-orders',                          // FOR LOCALLY HOSTED WORKFLOWS
-    GET_ORDER_DETAILS: 'http://localhost:5678/webhook/get-order-details',                      // FOR LOCALLY HOSTED WORKFLOWS
+    GET_PRODUCTS: 'https://team4n8n.app.n8n.cloud/webhook/get-products',                                // FOR LOCALLY HOSTED WORKFLOWS
+    GET_PRODUCT_DETAILS: 'https://team4n8n.app.n8n.cloud/webhook/get-product',                          // FOR LOCALLY HOSTED WORKFLOWS
+    ADD_TO_CART: 'https://team4n8n.app.n8n.cloud/webhook/add-to-cart',                                  // FOR LOCALLY HOSTED WORKFLOWS
+    VIEW_CART: 'https://team4n8n.app.n8n.cloud/webhook/view-cart',                                      // FOR LOCALLY HOSTED WORKFLOWS
+    UPDATE_CART_ITEM: 'https://team4n8n.app.n8n.cloud/webhook/update-cart-item',                        // FOR LOCALLY HOSTED WORKFLOWS
+    REMOVE_FROM_CART: 'https://team4n8n.app.n8n.cloud/webhook/update-cart-item',                        // FOR LOCALLY HOSTED WORKFLOWS
+    PLACE_ORDER: 'https://team4n8n.app.n8n.cloud/webhook/place-order-cod',                              // FOR LOCALLY HOSTED WORKFLOWS
+    GET_USER_ORDERS: 'https://team4n8n.app.n8n.cloud/webhook/get-user-orders',                          // FOR LOCALLY HOSTED WORKFLOWS
+    GET_ORDER_DETAILS: 'https://team4n8n.app.n8n.cloud/webhook/get-order-details',                      // FOR LOCALLY HOSTED WORKFLOWS
     
     // Admin Endpoints
-    ADMIN_ADD_PRODUCT: 'http://localhost:5678/webhook/admin-add-product-and-image',            // FOR LOCALLY HOSTED WORKFLOWS
-    ADMIN_UPLOAD_IMAGES: 'http://localhost:5678/webhook/admin-add-product-and-image',          // FOR LOCALLY HOSTED WORKFLOWS
-    ADMIN_GET_ALL_ORDERS: 'http://localhost:5678/webhook/admin-get-all-orders',                // FOR LOCALLY HOSTED WORKFLOWS
-    ADMIN_UPDATE_ORDER_STATUS: 'http://localhost:5678/webhook/admin-update-order-status'       // FOR LOCALLY HOSTED WORKFLOWS
+    ADMIN_ADD_PRODUCT: 'https://team4n8n.app.n8n.cloud/webhook/admin-add-product-and-image',            // FOR LOCALLY HOSTED WORKFLOWS
+    ADMIN_UPLOAD_IMAGES: 'https://team4n8n.app.n8n.cloud/webhook/admin-add-product-and-image',          // FOR LOCALLY HOSTED WORKFLOWS
+    ADMIN_GET_ALL_ORDERS: 'https://team4n8n.app.n8n.cloud/webhook/admin-get-all-orders',                // FOR LOCALLY HOSTED WORKFLOWS
+    ADMIN_UPDATE_ORDER_STATUS: 'https://team4n8n.app.n8n.cloud/webhook/admin-update-order-status'       // FOR LOCALLY HOSTED WORKFLOWS
 };
 
 // ==============================================
@@ -640,3 +640,4 @@ window.getStoredAdminToken = getStoredAdminToken;
 window.saveAdminToken = saveAdminToken;
 
 window.prefillAdminToken = prefillAdminToken;
+
